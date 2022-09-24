@@ -1,4 +1,4 @@
-# jetbot ros
+# robotics
 
 ## venv
 
