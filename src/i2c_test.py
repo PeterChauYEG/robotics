@@ -1,8 +1,8 @@
 import qwiic
 
-#These values are used to give BME280 and CCS811 some time to take samples
-initialize=True
-n=2
+results = qwiic.list_devices()
+
+print("Found %d devices" % len(results))
 
 oled = qwiic.QwiicMicroOled()
 oled.begin()

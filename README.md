@@ -30,3 +30,9 @@ python3 src/drone.py ws://192.168.0.182:8000
 
 ## test monitor
 python3 src/oled.py
+
+## gpio
+sudo apt install wiringpi
+
+## i2c
+i2cdetect -y 1
