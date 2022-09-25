@@ -55,7 +55,11 @@ def runExample():
     myMotor.set_drive(L_MTR, FWD, SPEED)
     time.sleep(1)
 
-    
+    print("Motor Test: Stop")
+    myMotor.set_drive(R_MTR, FWD, 0)
+    myMotor.set_drive(L_MTR, FWD, 0)
+    myMotor.disable()
+
 if __name__ == '__main__':
     try:
         runExample()
