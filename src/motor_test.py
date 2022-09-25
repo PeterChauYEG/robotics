@@ -1,7 +1,12 @@
 import qwiic
 import time
 import sys
-import math
+
+R_MTR = 0
+L_MTR = 1
+FWD = 0
+BWD = 1
+SPEED = 255
 
 results = qwiic.list_devices()
 
@@ -12,10 +17,7 @@ myMotor = qwiic.QwiicScmd()
 
 def runExample():
     print("Motor Test.")
-    R_MTR = 0
-    L_MTR = 1
-    FWD = 0
-    BWD = 1
+
 
     if myMotor.connected == False:
         print("Motor Driver not connected. Check connections.", \
@@ -33,19 +35,27 @@ def runExample():
     print("Motor enabled")
     time.sleep(.250)
 
-    while True:
-        for speed in range(20,255):
-            print(speed)
-            myMotor.set_drive(R_MTR,FWD,speed)
-            myMotor.set_drive(L_MTR,FWD,speed)
-            time.sleep(.05)
-        for speed in range(254,20, -1):
-            print(speed)
-            myMotor.set_drive(R_MTR,BWD,speed)
-            myMotor.set_drive(L_MTR,BWD,speed)
-            time.sleep(.05)
+    print("Motor Test: Forward")
+    myMotor.set_drive(R_MTR, FWD, SPEED)
+    myMotor.set_drive(L_MTR, FWD, SPEED)
+    time.sleep(1)
 
+    print("Motor Test: Backward")
+    myMotor.set_drive(R_MTR, FWD, -SPEED)
+    myMotor.set_drive(L_MTR, FWD, -SPEED)
+    time.sleep(1)
 
+    print("Motor Test: Left")
+    myMotor.set_drive(R_MTR, FWD, SPEED)
+    myMotor.set_drive(L_MTR, FWD, -SPEED)
+    time.sleep(1)
+
+    print("Motor Test: Right")
+    myMotor.set_drive(R_MTR, FWD, -SPEED)
+    myMotor.set_drive(L_MTR, FWD, SPEED)
+    time.sleep(1)
+
+    
 if __name__ == '__main__':
     try:
         runExample()
