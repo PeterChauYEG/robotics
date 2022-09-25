@@ -2,117 +2,121 @@ import time
 import qwiic
 import subprocess
 
+LCDWIDTH = 64
+
+
+def get_ip_address():
+    ip = subprocess.check_output(['hostname', '-I'])
+    return ip.decode('utf-8').split(' ')[0]
+
+
+def get_resource_usage():
+    # CPU Load
+    cmd = "top -bn1 | grep load | awk '{printf \"%.1f%%\", $(NF-2)}'"
+    CPU = subprocess.check_output(cmd, shell=True)
+
+    # Memory Use
+    cmd = "free -m | awk 'NR==2{printf \"%.1f%%\", $3*100/$2}'"
+    Mem_percent = subprocess.check_output(cmd, shell=True)
+    cmd = "free -m | awk 'NR==2{printf \"%.2f/%.1f\", $3/1024,$2/1024}'"
+    MemUsage = subprocess.check_output(cmd, shell=True)
+
+    # Disk Storage
+    cmd = "df -h | awk '$NF==\"/\"{printf \"%s\", $5}'"
+    Disk_percent = subprocess.check_output(cmd, shell=True)
+    cmd = "df -h | awk '$NF==\"/\"{printf \"%d/%d\", $3,$2}'"
+    DiskUsage = subprocess.check_output(cmd, shell=True)
+
+    return CPU, Mem_percent, MemUsage, Disk_percent, DiskUsage
+
+
+def get_bit_text_spacing(display, bit):
+    text_spacing = LCDWIDTH - (display._font.width + 1) * (len(str(bit.decode('utf-8'))))
+    return text_spacing
+
+
+def clear_display(display):
+    display.clear(disp.PAGE)
+    display.clear(disp.ALL)
+
+
+def init_display(display):
+    display.begin()
+    display.scroll_stop()
+    display.set_font_type(0)
+    clear_display(display)
+
+
+def display_ip(display, ip):
+    display.set_cursor(0, 0)
+
+    if ip:
+        display.print("ip: ")
+        display.set_cursor(0, 8)
+        display.print(ip)
+    else:
+        display.print("No Internet!")
+
+    display.display()
+    time.sleep(5)
+    clear_display(display)
+
+
+def display_resource_usage(display, CPU, Mem_percent, Disk_percent):
+    x3 = get_bit_text_spacing(disp, CPU)
+    x4 = get_bit_text_spacing(disp, Mem_percent)
+    x5 = get_bit_text_spacing(disp, Disk_percent)
+
+    display.set_cursor(0, 0)
+    display.print("CPU:")
+    display.set_cursor(0, 10)
+    display.print("Mem:")
+    display.set_cursor(0, 20)
+    display.print("Disk:")
+
+    display.set_cursor(x3, 0)
+    display.print(str(CPU.decode('utf-8')))
+    display.set_cursor(x4, 10)
+    display.print(str(Mem_percent.decode('utf-8')))
+    display.set_cursor(x5, 20)
+    display.print(str(Disk_percent.decode('utf-8')))
+
+    display.display()
+    time.sleep(2)
+    clear_display(display)
+
+
+def display_resource_capacity(display, MemUsage, DiskUsage):
+    x6 = get_bit_text_spacing(disp, MemUsage)
+    x7 = get_bit_text_spacing(disp, DiskUsage)
+
+    display.set_cursor(0, 0)
+    display.print("Mem:")
+    display.set_cursor(x6, 10)
+    display.print(str(MemUsage.decode('utf-8')) + "GB")
+    display.set_cursor(0, 20)
+    display.print("Disk:")
+    display.set_cursor(x7, 30)
+    display.print(str(DiskUsage.decode('utf-8')) + "GB")
+
+    display.display()
+    time.sleep(2)
+    clear_display(display)
+
+
 if __name__ == '__main__':
     print('starting i2c test')
 
-    # Screen Width
-    LCDWIDTH = 64
-
-    # Initialization------------------------------------------------------------
     disp = qwiic.QwiicMicroOled()
-
-    disp.begin()
-    disp.scroll_stop()
-    disp.set_font_type(0) # Set Font
-    # Could replace line spacing with disp.getFontHeight, but doesn't scale properly
-
-    # Display Flame (set in begin function)-------------------------------------
-    disp.display()
-    time.sleep(1) # Pause 5 sec
+    
+    init_display(disp)
+    time.sleep(1)
 
     while True:
-        # Checks Eth0 and Wlan0 Connections---------------------------------
-        cmd = "hostname -I"
-        wlan = subprocess.check_output(cmd, shell = True )
+        ip = get_ip_address()
 
-        # Check Resource Usage----------------------------------------------
-        # Shell scripts for system monitoring from here : https://unix.stackexchange.com/questions/119126/command-to-display-memory-usage-disk-$
+        CPU, Mem_percent, MemUsage, Disk_percent, DiskUsage = get_resource_usage()
 
-        # CPU Load
-        cmd = "top -bn1 | grep load | awk '{printf \"%.1f%%\", $(NF-2)}'"
-        CPU = subprocess.check_output(cmd, shell = True )
-
-        # Memory Use
-        cmd = "free -m | awk 'NR==2{printf \"%.1f%%\", $3*100/$2}'"
-        Mem_percent = subprocess.check_output(cmd, shell = True )
-        cmd = "free -m | awk 'NR==2{printf \"%.2f/%.1f\", $3/1024,$2/1024}'"
-        MemUsage = subprocess.check_output(cmd, shell = True )
-
-        # Disk Storage
-        cmd = "df -h | awk '$NF==\"/\"{printf \"%s\", $5}'"
-        Disk_percent = subprocess.check_output(cmd, shell = True )
-        cmd = "df -h | awk '$NF==\"/\"{printf \"%d/%d\", $3,$2}'"
-        DiskUsage = subprocess.check_output(cmd, shell = True )
-
-
-        # Text Spacing (places text on right edge of display)
-        x3 = LCDWIDTH - (disp._font.width + 1) * (len(str(CPU.decode('utf-8'))))
-        x4 = LCDWIDTH - (disp._font.width + 1) * (len(str(Mem_percent.decode('utf-8'))))
-        x5 = LCDWIDTH - (disp._font.width + 1) * (len(str(Disk_percent.decode('utf-8'))))
-        x6 = LCDWIDTH - (disp._font.width + 1) * (len(str(MemUsage.decode('utf-8')) + "GB"))
-        x7 = LCDWIDTH - (disp._font.width + 1) * (len(str(DiskUsage.decode('utf-8')) + "GB"))
-
-        # Displays IP Address (if available)--------------------------------
-
-        # Clear Display
-        disp.clear(disp.PAGE)
-        disp.clear(disp.ALL)
-
-        #Set Cursor at Origin
-        disp.set_cursor(0,0)
-
-        # Prints IP Address on OLED Display
-        if wlan:
-            disp.print("wlan0: ")
-            disp.set_cursor(0,8)
-            disp.print(wlan)
-        else:
-            disp.print("No Internet!")
-
-        disp.display()
-        time.sleep(5)
-
-        # Displays Resource Usage-------------------------------------------
-        # ------------------------------------------------------------------
-
-        # Percentage--------------------------------------------------------
-        # Clear Display
-        disp.clear(disp.PAGE)
-        disp.clear(disp.ALL)
-
-        # Prints Percentage Use on OLED Display
-        disp.set_cursor(0,0)
-        disp.print("CPU:")
-        disp.set_cursor(0,10)
-        disp.print("Mem:")
-        disp.set_cursor(0,20)
-        disp.print("Disk:")
-
-        disp.set_cursor(x3,0)
-        disp.print(str(CPU.decode('utf-8')))
-        disp.set_cursor(x4,10)
-        disp.print(str(Mem_percent.decode('utf-8')))
-        disp.set_cursor(x5,20)
-        disp.print(str(Disk_percent.decode('utf-8')))
-
-        disp.display()
-        time.sleep(2)
-
-
-        # Size--------------------------------------------------------------
-        # Clear Display
-        disp.clear(disp.PAGE)
-        disp.clear(disp.ALL)
-
-        # Prints Capacity Use on OLED Display
-        disp.set_cursor(0,0)
-        disp.print("Mem:")
-        disp.set_cursor(x6,10)
-        disp.print(str(MemUsage.decode('utf-8')) + "GB")
-        disp.set_cursor(0,20)
-        disp.print("Disk:")
-        disp.set_cursor(x7,30)
-        disp.print(str(DiskUsage.decode('utf-8')) + "GB")
-
-        disp.display()
-        time.sleep(2)
+        display_ip(disp, ip)
+        display_resource_usage(disp, CPU, Mem_percent, Disk_percent)
+        display_resource_capacity(disp, MemUsage, DiskUsage)
