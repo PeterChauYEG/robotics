@@ -26,8 +26,8 @@ def runExample():
     time.sleep(.250)
 
     # Zero Motor Speeds
-    myMotor.set_drive(0, 0, 0)
-    myMotor.set_drive(1, 0, 0)
+    myMotor.set_drive(R_MTR, FWD, 0)
+    myMotor.set_drive(L_MTR, FWD, 0)
 
     myMotor.enable()
     print("Motor enabled")
@@ -37,11 +37,14 @@ def runExample():
         myMotor.set_drive(R_MTR, FWD, speed)
         myMotor.set_drive(L_MTR, FWD, speed)
         time.sleep(2)
+        myMotor.set_drive(R_MTR, FWD, 0)
+        myMotor.set_drive(L_MTR, FWD, 0)
 
         myMotor.set_drive(R_MTR, BWD, speed)
         myMotor.set_drive(L_MTR, BWD, speed)
         time.sleep(2)
-
+        myMotor.set_drive(R_MTR, FWD, 0)
+        myMotor.set_drive(L_MTR, FWD, 0)
 
 if __name__ == '__main__':
     try:
