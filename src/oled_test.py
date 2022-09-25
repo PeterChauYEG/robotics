@@ -1,7 +1,6 @@
 import time
 import qwiic
 import subprocess
-import commands
 
 if __name__ == '__main__':
     print('starting i2c test')
@@ -19,7 +18,7 @@ if __name__ == '__main__':
 
     # Display Flame (set in begin function)-------------------------------------
     disp.display()
-    time.sleep(5) # Pause 5 sec
+    time.sleep(1) # Pause 5 sec
 
     while True:
         # Checks Eth0 and Wlan0 Connections---------------------------------
@@ -66,12 +65,12 @@ if __name__ == '__main__':
         if wlan:
             disp.print("wlan0: ")
             disp.set_cursor(0,8)
-            disp.print(str(wlan.decode('uft-8'), 0))
+            disp.print(wlan)
         else:
             disp.print("No Internet!")
 
         disp.display()
-        time.sleep(10) # Pause 10 sec
+        time.sleep(2) # Pause 10 sec
 
         # Displays Resource Usage-------------------------------------------
         # ------------------------------------------------------------------
@@ -82,7 +81,7 @@ if __name__ == '__main__':
         disp.clear(disp.ALL)
 
         # Prints Percentage Use on OLED Display
-        disp.set_cursor(0,0)	# Set Cursor at Origin
+        disp.set_cursor(0,0)
         disp.print("CPU:")
         disp.set_cursor(0,10)
         disp.print("Mem:")
@@ -97,7 +96,7 @@ if __name__ == '__main__':
         disp.print(str(Disk_percent.decode('utf-8')))
 
         disp.display()
-        time.sleep(7.5) # Pause 7.5 sec
+        time.sleep(2)
 
 
         # Size--------------------------------------------------------------
@@ -106,7 +105,7 @@ if __name__ == '__main__':
         disp.clear(disp.ALL)
 
         # Prints Capacity Use on OLED Display
-        disp.set_cursor(0,0)	# Set Cursor at Origin
+        disp.set_cursor(0,0)
         disp.print("Mem:")
         disp.set_cursor(x6,10)
         disp.print(str(MemUsage.decode('utf-8')) + "GB")
@@ -116,4 +115,4 @@ if __name__ == '__main__':
         disp.print(str(DiskUsage.decode('utf-8')) + "GB")
 
         disp.display()
-        time.sleep(7.5) # Pause 7.5 sec
+        time.sleep(2)
