@@ -1,6 +1,7 @@
 import asyncio
 import websockets
 import keyboard
+import sys
 
 
 class Brain:
@@ -13,7 +14,7 @@ class Brain:
         self.connected = False
 
     def start_server(self):
-        print('Starting server...')
+        print('Starting server... host: {}, port: {}'.format(self.host, self.port))
         server = websockets.serve(self.handler, self.host, self.port)
         return server
 
@@ -100,6 +101,12 @@ if __name__ == '__main__':
     print('initializing brain')
     host = 'localhost'
     port = 8000
+
+    if len(sys.argv) >= 1:
+        host = sys.argv[1]
+
+    if len(sys.argv) >= 2:
+        port = sys.argv[2]
 
     brain = Brain(host=host, port=port, debounce=0.1)
 
