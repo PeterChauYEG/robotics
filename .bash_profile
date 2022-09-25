@@ -11,7 +11,7 @@ alias ga="git add --a"
 alias gp="git push origin "
 alias gm="git checkout main"
 alias gum="git pull origin main"
-alias gum="git pull origin main"
+alias gu="git pull origin "
 alias gcob="git checkout -b "
 alias gcc="git checkout "
 
