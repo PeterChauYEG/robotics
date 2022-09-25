@@ -26,75 +26,72 @@ def get_resource_usage():
     return CPU, Mem_percent, Disk_percent
 
 
-def get_bit_text_spacing(display, bit):
-    text_spacing = LCDWIDTH - (display._font.width + 1) * (len(str(bit.decode('utf-8'))))
-    return text_spacing
+class Monitor:
+    def __init__(self):
+        self.display = qwiic.QwiicMicroOled()
 
+    def get_bit_text_spacing(self, bit):
+        text_spacing = LCDWIDTH - (self.display._font.width + 1) * (len(str(bit.decode('utf-8'))))
+        return text_spacing
 
-def clear_display(display):
-    display.clear(disp.PAGE)
-    display.clear(disp.ALL)
+    def clear_display(self):
+        self.display.clear(self.display.PAGE)
+        self.display.clear(self.display.ALL)
 
+    def init_display(self):
+        self.display.begin()
+        self.display.scroll_stop()
+        self.display.set_font_type(0)
+        self.display.display()
+        time.sleep(1)
+        self.clear_display()
 
-def init_display(display):
-    display.begin()
-    display.scroll_stop()
-    display.set_font_type(0)
-    display.display()
-    time.sleep(1)
-    clear_display(display)
+    def display_ip(self, ip):
+        self.display.set_cursor(0, 0)
 
+        if ip:
+            self.display.print("ip: ")
+            self.display.set_cursor(0, 8)
+            self.display.print(ip)
+        else:
+            self.display.print("No Internet!")
 
-def display_ip(display, ip):
-    display.set_cursor(0, 0)
+        self.display.display()
+        time.sleep(5)
+        self.clear_display()
 
-    if ip:
-        display.print("ip: ")
-        display.set_cursor(0, 8)
-        display.print(ip)
-    else:
-        display.print("No Internet!")
+    def display_resource_usage(self, CPU, Mem_percent, Disk_percent):
+        x3 = self.get_bit_text_spacing(CPU)
+        x4 = self.get_bit_text_spacing(Mem_percent)
+        x5 = self.get_bit_text_spacing(Disk_percent)
 
-    display.display()
-    time.sleep(5)
-    clear_display(display)
+        self.display.set_cursor(0, 0)
+        self.display.print("CPU:")
+        self.display.set_cursor(0, 10)
+        self.display.print("Mem:")
+        self.display.set_cursor(0, 20)
+        self.display.print("Disk:")
 
+        self.display.set_cursor(x3, 0)
+        self.display.print(str(CPU.decode('utf-8')))
+        self.display.set_cursor(x4, 10)
+        self.display.print(str(Mem_percent.decode('utf-8')))
+        self.display.set_cursor(x5, 20)
+        self.display.print(str(Disk_percent.decode('utf-8')))
 
-def display_resource_usage(display, CPU, Mem_percent, Disk_percent):
-    x3 = get_bit_text_spacing(disp, CPU)
-    x4 = get_bit_text_spacing(disp, Mem_percent)
-    x5 = get_bit_text_spacing(disp, Disk_percent)
-
-    display.set_cursor(0, 0)
-    display.print("CPU:")
-    display.set_cursor(0, 10)
-    display.print("Mem:")
-    display.set_cursor(0, 20)
-    display.print("Disk:")
-
-    display.set_cursor(x3, 0)
-    display.print(str(CPU.decode('utf-8')))
-    display.set_cursor(x4, 10)
-    display.print(str(Mem_percent.decode('utf-8')))
-    display.set_cursor(x5, 20)
-    display.print(str(Disk_percent.decode('utf-8')))
-
-    display.display()
-    time.sleep(2)
-    clear_display(display)
+        self.display.display()
+        time.sleep(2)
+        self.clear_display()
 
 
 if __name__ == '__main__':
     print('starting i2c test')
 
-    disp = qwiic.QwiicMicroOled()
-
-    init_display(disp)
-    time.sleep(1)
+    monitor = Monitor()
 
     while True:
         ip = get_ip_address()
         CPU, Mem_percent, Disk_percent = get_resource_usage()
 
-        display_ip(disp, ip)
-        display_resource_usage(disp, CPU, Mem_percent, Disk_percent)
+        monitor.display_ip(ip)
+        monitor.display_resource_usage(CPU, Mem_percent, Disk_percent)
