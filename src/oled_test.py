@@ -40,6 +40,8 @@ def init_display(display):
     display.begin()
     display.scroll_stop()
     display.set_font_type(0)
+    display.display()
+    time.sleep(1)
     clear_display(display)
 
 
