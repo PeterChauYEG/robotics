@@ -10,18 +10,22 @@ source venv/bin/activate
 
 ### deps
 pip3 install sparkfun-qwiic
-pip3 install websockets
-pip3 install asyncio
+pip3 install websockets==4
+pip3 install asyncio==3.4.3
+pip3 install sparkfun_qwiic_micro_oled
+
 python3 -m pip install keyboard
 
 ----------------
 
 ## brain
-sudo python3 src/ws/brain.py 192.168.0.182 8000
+sudo python3 src/brain.py 192.168.0.182 8000
 
 ### connect
 ssh pi@192.168.0.247
 
 ## drone
-python3 src/ws/drone.py ws://192.168.0.182:8000
+python3 src/drone.py ws://192.168.0.182:8000
 
+## test monitor
+python3 src/monitor.py
