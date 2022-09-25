@@ -90,7 +90,7 @@ if __name__ == '__main__':
 
     monitor = Monitor()
     monitor.init_display()
-    
+
     while True:
         ip = get_ip_address()
         CPU, Mem_percent, Disk_percent = get_resource_usage()
