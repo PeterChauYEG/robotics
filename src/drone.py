@@ -76,7 +76,7 @@ class Controller:
 if __name__ == '__main__':
     print('initializing drone')
 
-    host = 'ws://localhost:8000'
+    host = 'ws://192.168.0.182:8000'
     drone = Drone()
     controller = Controller(drone, host)
 
