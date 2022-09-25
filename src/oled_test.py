@@ -22,7 +22,7 @@ if __name__ == '__main__':
 
     while True:
         # Checks Eth0 and Wlan0 Connections---------------------------------
-        cmd = "hostname -I"
+        cmd = "hostname -I
         wlan = subprocess.check_output(cmd, shell = True )
 
         # Check Resource Usage----------------------------------------------
@@ -70,7 +70,7 @@ if __name__ == '__main__':
             disp.print("No Internet!")
 
         disp.display()
-        time.sleep(2) # Pause 10 sec
+        time.sleep(5)
 
         # Displays Resource Usage-------------------------------------------
         # ------------------------------------------------------------------
