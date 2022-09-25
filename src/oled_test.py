@@ -22,7 +22,7 @@ if __name__ == '__main__':
 
     while True:
         # Checks Eth0 and Wlan0 Connections---------------------------------
-        cmd = "hostname -I
+        cmd = "hostname -I"
         wlan = subprocess.check_output(cmd, shell = True )
 
         # Check Resource Usage----------------------------------------------
