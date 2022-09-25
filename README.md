@@ -14,6 +14,7 @@ pip3 install websockets==4
 pip3 install asyncio==3.4.3
 pip3 install sparkfun_qwiic_micro_oled
 sudo pip3 install sparkfun_qwiic
+pip3 install spidev
 
 python3 -m pip install keyboard
 
