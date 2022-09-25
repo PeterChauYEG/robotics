@@ -28,7 +28,7 @@ def get_resource_usage():
 
 class Monitor:
     def __init__(self):
-        self.display = qwiic.QwiicMicroOled()
+        self.display = None
 
     def get_bit_text_spacing(self, bit):
         text_spacing = LCDWIDTH - (self.display._font.width + 1) * (len(str(bit.decode('utf-8'))))
@@ -39,6 +39,7 @@ class Monitor:
         self.display.clear(self.display.ALL)
 
     def init_display(self):
+        self.display = qwiic.QwiicMicroOled()
         self.display.begin()
         self.display.scroll_stop()
         self.display.set_font_type(0)
