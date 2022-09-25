@@ -2,12 +2,6 @@ import qwiic
 import time
 import sys
 
-R_MTR = 0
-L_MTR = 1
-FWD = 0
-BWD = 1
-speed = 20
-
 results = qwiic.list_devices()
 
 print("Found %d devices" % len(results))
@@ -16,6 +10,12 @@ myMotor = qwiic.QwiicScmd()
 
 def runExample():
     print("Motor Test.")
+
+    R_MTR = 0
+    L_MTR = 1
+    FWD = 0
+    BWD = 1
+    speed = 20
 
     if myMotor.connected == False:
         print("Motor Driver not connected. Check connections.", \
