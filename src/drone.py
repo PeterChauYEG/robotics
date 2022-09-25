@@ -30,7 +30,7 @@ class Controller:
         return await self.connect_with_retries()
 
     async def connect_with_retries(self):
-        async for websocket in websockets.connect(self.host):
+        async with websockets.connect(self.host) as websocket:
             try:
                 print('connected')
                 self.websocket = websocket
@@ -40,8 +40,6 @@ class Controller:
             except websockets.exceptions.ConnectionClosed:
                 print('connection closed')
                 self.websocket = None
-                await asyncio.sleep(1)
-                continue
 
     async def loop(self):
         if self.websocket is not None and self.websocket.open:
