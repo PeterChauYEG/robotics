@@ -1,7 +1,7 @@
 export BASH_CONF="bash_profile"
 
 # useful aliases
-alias bs="source ~/.bash_profile"
+alias bs="source ~/robotics/.bash_profile"
 alias profile="cat .bash_profile"
 
 alias gc="git commit -m"
@@ -18,5 +18,5 @@ alias la="ls -la"
 alias ".."="cd .."
 alias "..."="cd ..; cd .."
 
-alias drone ="python3 src/drone.py ws://192.168.0.182:8000"
-alias i2c_test="python3 src/i2c_test.py"
+alias drone="python3 ~/robotics/src/drone.py ws://192.168.0.182:8000"
+alias i2c_test="python3 ~/robotics/src/i2c_test.py"
