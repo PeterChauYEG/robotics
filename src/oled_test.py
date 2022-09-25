@@ -18,16 +18,12 @@ def get_resource_usage():
     # Memory Use
     cmd = "free -m | awk 'NR==2{printf \"%.1f%%\", $3*100/$2}'"
     Mem_percent = subprocess.check_output(cmd, shell=True)
-    cmd = "free -m | awk 'NR==2{printf \"%.2f/%.1f\", $3/1024,$2/1024}'"
-    MemUsage = subprocess.check_output(cmd, shell=True)
 
     # Disk Storage
     cmd = "df -h | awk '$NF==\"/\"{printf \"%s\", $5}'"
     Disk_percent = subprocess.check_output(cmd, shell=True)
-    cmd = "df -h | awk '$NF==\"/\"{printf \"%d/%d\", $3,$2}'"
-    DiskUsage = subprocess.check_output(cmd, shell=True)
 
-    return CPU, Mem_percent, MemUsage, Disk_percent, DiskUsage
+    return CPU, Mem_percent, Disk_percent
 
 
 def get_bit_text_spacing(display, bit):
@@ -86,37 +82,17 @@ def display_resource_usage(display, CPU, Mem_percent, Disk_percent):
     clear_display(display)
 
 
-def display_resource_capacity(display, MemUsage, DiskUsage):
-    x6 = get_bit_text_spacing(disp, MemUsage)
-    x7 = get_bit_text_spacing(disp, DiskUsage)
-
-    display.set_cursor(0, 0)
-    display.print("Mem:")
-    display.set_cursor(x6, 10)
-    display.print(str(MemUsage.decode('utf-8')) + "GB")
-    display.set_cursor(0, 20)
-    display.print("Disk:")
-    display.set_cursor(x7, 30)
-    display.print(str(DiskUsage.decode('utf-8')) + "GB")
-
-    display.display()
-    time.sleep(2)
-    clear_display(display)
-
-
 if __name__ == '__main__':
     print('starting i2c test')
 
     disp = qwiic.QwiicMicroOled()
-    
+
     init_display(disp)
     time.sleep(1)
 
     while True:
         ip = get_ip_address()
-
-        CPU, Mem_percent, MemUsage, Disk_percent, DiskUsage = get_resource_usage()
+        CPU, Mem_percent, Disk_percent = get_resource_usage()
 
         display_ip(disp, ip)
         display_resource_usage(disp, CPU, Mem_percent, Disk_percent)
-        display_resource_capacity(disp, MemUsage, DiskUsage)
