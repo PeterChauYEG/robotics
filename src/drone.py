@@ -1,6 +1,6 @@
 import asyncio
 import websockets
-
+import sys
 
 class Drone:
     def forward(self, speed=0.5):
@@ -74,7 +74,11 @@ class Controller:
 if __name__ == '__main__':
     print('initializing drone')
 
-    host = '192.168.0.182:8000'
+    host = 'ws://localhost:8000'
+
+    if len(sys.argv) >= 1:
+        host = sys.argv[1]
+
     drone = Drone()
     controller = Controller(drone, host)
 
