@@ -10,7 +10,7 @@ from threading import Thread, Event
 from queue import Queue
 import time
 import subprocess
-import picamera
+from picamera import PiCamera
 from io import BytesIO
 
 # drone
@@ -48,23 +48,20 @@ def get_ip_address():
 
 
 class VideoStream:
+    def __init__(self, camera):
+        self.camera = camera
+
     def task(self):
-        with picamera.PiCamera() as camera:
-            camera.resolution = (100, 100)
-            print("init camera complete")
+        if not self.camera or self.camera.closed:
+            raise Exception("Camera closed")
 
-            if not camera or camera.closed:
-                raise Exception("Camera closed")
-
-            try:
-                camera.start_recording(self.stream, 'rgb')
-                camera.wait_recording(1)
-                camera.stop_recording()
-            except Exception as e:
-                print(e)
-            finally:
-                camera.close()
-
+        try:
+            self.camera.start_recording(video_stream, 'rgb')
+        except Exception as e:
+            print(e)
+        finally:
+            if self.camera:
+                self.camera.stop_recording()
 
 class Monitor:
     def __init__(self):
@@ -243,20 +240,31 @@ if __name__ == '__main__':
 
     host = get_args()
 
-    drivetrain = DriveTrain()
-    monitor = Monitor()
-    video_stream = VideoStream()
+    camera = PiCamera()
+    camera.resolution = (100, 100)
+
+    # drivetrain = DriveTrain()
+    # monitor = Monitor()
+    video_stream = VideoStream(camera)
     drone = Drone(host)
 
-    drivetrain_thread = Thread(target=drivetrain.task, args=(drivetrain_queue,))
-    monitor_thread = Thread(target=monitor.task, args=(monitor_queue,))
+    drivetrain_thread = None
+    monitor_thread = None
+    # drivetrain_thread = Thread(target=drivetrain.task, args=(drivetrain_queue,))
+    # monitor_thread = Thread(target=monitor.task, args=(monitor_queue,))
     video_stream_thread = Thread(target=video_stream.task, args=(video_stream,))
 
     loop = asyncio.get_event_loop()
 
     try:
-        monitor_thread.start()
-        drivetrain_thread.start()
+        if monitor_thread:
+            monitor_thread.start()
+
+        if drivetrain_thread:
+            drivetrain_thread.start()
+
+        if video_stream_thread:
+            video_stream_thread.start()
 
         loop.run_until_complete(drone.run())
         loop.run_forever()
