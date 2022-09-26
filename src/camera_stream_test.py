@@ -15,7 +15,6 @@ class VideoStream:
             self.camera = camera
             self.camera.resolution = (100, 100)
             # self.camera.framerate = 24
-            self.camera.start_preview()
             time.sleep(2)
             print("init camera complete")
 
