@@ -9,6 +9,7 @@ import qwiic
 from threading import Thread, Event
 from queue import Queue
 import time
+import subprocess
 
 # drone
 DEFAULT_HOST = 'ws://localhost:8000'
@@ -41,6 +42,7 @@ def get_args():
 class Monitor:
     def __init__(self):
         self.display = None
+        self.ip = None
 
     def init(self):
         print("init monitor starting")
@@ -51,30 +53,29 @@ class Monitor:
         self.display.clear(self.display.ALL)
         print("init monitor complete")
 
+    def get_ip_address(self):
+        ip = subprocess.check_output(['hostname', '-I'])
+        self.ip = ip.decode('utf-8').split(' ')[0]
+
     def clear(self):
         self.display.clear(self.display.PAGE)
         self.display.scroll_stop()
         self.display.set_cursor(0, 0)
 
-    # def display_ip(self, ip):
-    #     self.clear()
-    #
-    #     if ip:
-    #         self.display.print("ip: ")
-    #         self.display.set_cursor(0, 8)
-    #         self.display.print(ip)
-    #     else:
-    #         self.display.print("No Internet!")
-    #
-    #     self.display.display()
+    def display_ip(self):
+        if self.ip:
+            self.display.set_cursor(0, 24)
+            self.display.print("ip: ")
+            self.display.set_cursor(0, 32)
+            self.display.print(self.ip)
+        else:
+            self.display.print("No Internet!")
 
     def display_cmd(self, cmd):
         self.clear()
         self.display.print("cmd: ")
         self.display.set_cursor(0, 8)
         self.display.print(cmd)
-
-        self.display.display()
 
     def task(self, queue_in):
         print("monitor task started")
@@ -85,6 +86,8 @@ class Monitor:
             if not queue_in.empty() and self.display:
                 msg = queue_in.get()
                 self.display_cmd(msg)
+                self.display_ip()
+                self.display.display()
 
 
 class DriveTrain:
