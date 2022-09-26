@@ -72,7 +72,7 @@ class Monitor:
             self.display.print("No Internet!")
 
     def display_name(self):
-        self.display.set_cursor(0, 32)
+        self.display.set_cursor(0, 40)
         self.display.print("nipper")
 
     def display_cmd(self, cmd):
