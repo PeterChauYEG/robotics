@@ -216,7 +216,6 @@ class Drone:
                     print('image sent')
 
                 msg = await self.websocket.recv()
-                await self.websocket.send("received")
                 Drone.msg_handler(msg)
 
     @staticmethod

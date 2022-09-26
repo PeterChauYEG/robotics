@@ -38,6 +38,7 @@ class Brain:
 
                 data = await self.websocket.recv()
                 self.handle_msg(data)
+                await self.websocket.send("received")
 
                 # # wait for response and debounce key press
                 # if self.key_pressed:
