@@ -58,9 +58,9 @@ class Monitor:
     #     self.display.display()
 
     def display_cmd(self, cmd):
-        #self.clear()
         print("displaying cmd start")
 
+        self.clear()
         self.display.print("cmd: ")
         self.display.set_cursor(0, 8)
         self.display.print(cmd)
