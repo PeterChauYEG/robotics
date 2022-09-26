@@ -7,35 +7,26 @@ from io import BytesIO
 
 class VideoStream:
     def __init__(self):
-        self.camera = None
         self.stream = BytesIO()
 
-    def init(self):
-        print("init camera starting")
-
+    def task(self):
         with picamera.PiCamera() as camera:
-            self.camera = camera
-            self.camera.resolution = (100, 100)
-            # self.camera.framerate = 24
-            time.sleep(2)
+            camera.resolution = (100, 100)
             print("init camera complete")
 
-    def task(self):
-        self.init()
+            if not camera or camera.closed:
+                raise Exception("Camera closed")
 
-        if not self.camera or self.camera.closed:
-            raise Exception("Camera closed")
+            try:
+                camera.start_recording(self.stream, 'rgb')
+                camera.wait_recording(1)
+                camera.stop_recording()
 
-        try:
-            self.camera.start_recording(self.stream, 'rgb')
-            self.camera.wait_recording(1)
-            self.camera.stop_recording()
-
-            print(self.stream.getvalue())
-        except Exception as e:
-            print(e)
-        finally:
-            self.camera.close()
+                print(self.stream.getvalue())
+            except Exception as e:
+                print(e)
+            finally:
+                camera.close()
 
 
 if __name__ == '__main__':
