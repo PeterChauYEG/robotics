@@ -208,10 +208,13 @@ class Drone:
 
     async def loop(self):
         if self.websocket is not None and self.websocket.open:
+            item = np.ones((128, 112, 3), dtype=np.uint8)
+
             while True:
-                if video_stream_io[0][0][0] != 0:
-                    await self.websocket.send(video_stream_io.tobytes())
-                    video_stream_io.fill(0)
+                await self.websocket.send(item.tobytes())
+                # if video_stream_io[0][0][0] != 0:
+                #     await self.websocket.send(video_stream_io.tobytes())
+                #     video_stream_io.fill(0)
 
                 # msg = await self.websocket.recv()
                 # Drone.msg_handler(msg)

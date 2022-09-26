@@ -3,7 +3,7 @@ import websockets
 import keyboard
 import sys
 import numpy as np
-import cv2
+import matplotlib.pyplot as plt
 
 video_stream = np.empty((128, 112, 3), dtype=np.uint8)
 
@@ -64,13 +64,16 @@ class Brain:
             print('connected')
             self.connected = True
         else:
+            print('unknown message: {}'.format(data))
             video_stream[:] = np.frombuffer(data, dtype=np.uint8).reshape((128, 112, 3))
             print(video_stream)
+            print(video_stream.shape)
 
+            # plt.imshow(video_stream)
+            # plt.show()
             # show video stream
-            cv2.imshow('video stream', video_stream)
-            cv2.waitKey(1)  # wait for 1ms
-
+            # plt.imshow(video_stream, interpolation='none', aspect='auto')
+            # plt.show()
 
     async def debounce_keyboard_input(self):
         await asyncio.sleep(self.debounce)
