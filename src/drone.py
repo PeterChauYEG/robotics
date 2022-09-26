@@ -215,8 +215,8 @@ class Drone:
                     video_stream_io.fill(0)
                     print('image sent')
 
-                msg = await self.websocket.recv()
-                Drone.msg_handler(msg)
+                # msg = await self.websocket.recv()
+                # Drone.msg_handler(msg)
 
     @staticmethod
     def msg_handler(msg):
