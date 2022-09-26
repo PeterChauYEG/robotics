@@ -21,10 +21,14 @@ class VideoStream:
     def task(self):
         self.init()
 
+        if self.camera.closed:
+            raise Exception("Camera not closed")
+
         image = np.empty((128, 112, 3), dtype=np.uint8)
         self.camera.capture(image, 'rgb')
         image = image[:100, :100]
         print(image[0][0])
+
 
 if __name__ == '__main__':
     print('initializing camera stream test')
