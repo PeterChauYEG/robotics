@@ -39,6 +39,11 @@ def get_args():
         return DEFAULT_HOST
 
 
+def get_ip_address():
+    ip = subprocess.check_output(['hostname', '-I'])
+    return ip.decode('utf-8').split(' ')[0]
+
+
 class Monitor:
     def __init__(self):
         self.display = None
@@ -51,11 +56,8 @@ class Monitor:
         self.display.begin()
         self.display.scroll_stop()
         self.display.clear(self.display.ALL)
+        self.ip = get_ip_address()
         print("init monitor complete")
-
-    def get_ip_address(self):
-        ip = subprocess.check_output(['hostname', '-I'])
-        self.ip = ip.decode('utf-8').split(' ')[0]
 
     def clear(self):
         self.display.clear(self.display.PAGE)
@@ -78,8 +80,6 @@ class Monitor:
         self.display.print(cmd)
 
     def task(self, queue_in):
-        print("monitor task started")
-
         self.init()
 
         while not event.is_set():
@@ -103,13 +103,11 @@ class DriveTrain:
             raise Exception("Motor board not connected")
 
         self.motorboard.begin()
-        print("Motor initialized.")
         time.sleep(.250)
 
         self.stop()
 
         self.motorboard.enable()
-        print("Motor enabled")
         time.sleep(.250)
 
         print("init drivetrain complete")
@@ -157,8 +155,6 @@ class DriveTrain:
             print('unknown command')
 
     def task(self, queue_in):
-        print("drivetrain task started")
-
         self.init()
 
         while not event.is_set():
@@ -234,7 +230,6 @@ if __name__ == '__main__':
     loop = asyncio.get_event_loop()
 
     try:
-        print('starting drone')
         monitor_thread.start()
         drivetrain_thread.start()
 
