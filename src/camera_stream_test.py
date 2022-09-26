@@ -2,11 +2,13 @@ import time
 import picamera
 import picamera.array
 import numpy as np
+from io import BytesIO
 
 
 class VideoStream:
     def __init__(self):
         self.camera = None
+        self.stream = BytesIO()
 
     def init(self):
         print("init camera starting")
@@ -21,13 +23,19 @@ class VideoStream:
     def task(self):
         self.init()
 
-        if self.camera.closed:
-            raise Exception("Camera not closed")
+        if not self.camera or self.camera.closed:
+            raise Exception("Camera closed")
 
-        image = np.empty((128, 112, 3), dtype=np.uint8)
-        self.camera.capture(image, 'rgb')
-        image = image[:100, :100]
-        print(image[0][0])
+        try:
+            self.camera.start_recording(self.stream, 'rgb')
+            self.camera.wait_recording(1)
+            self.camera.stop_recording()
+
+            print(self.stream.getvalue())
+        except Exception as e:
+            print(e)
+        finally:
+            self.camera.close()
 
 
 if __name__ == '__main__':
