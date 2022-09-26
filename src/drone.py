@@ -51,7 +51,7 @@ class VideoStream:
     def __init__(self, camera):
         self.camera = camera
 
-    def task(self):
+    def task(self, video_stream):
         if not self.camera or self.camera.closed:
             raise Exception("Camera closed")
 
@@ -62,6 +62,7 @@ class VideoStream:
         finally:
             if self.camera:
                 self.camera.stop_recording()
+
 
 class Monitor:
     def __init__(self):
