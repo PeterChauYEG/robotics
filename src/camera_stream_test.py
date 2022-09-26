@@ -1,32 +1,30 @@
-import time
-import picamera
-import picamera.array
-import numpy as np
+from picamera import PiCamera
 from io import BytesIO
 
 
 class VideoStream:
     def __init__(self):
         self.stream = BytesIO()
+        self.camera = None
 
     def task(self):
-        with picamera.PiCamera() as camera:
-            camera.resolution = (100, 100)
-            print("init camera complete")
+        self.camera = PiCamera()
 
-            if not camera or camera.closed:
-                raise Exception("Camera closed")
+        self.camera.resolution = (100, 100)
+        print("init camera complete")
 
-            try:
-                camera.start_recording(self.stream, 'rgb')
-                camera.wait_recording(1)
-                camera.stop_recording()
+        if not self.camera or self.camera.closed:
+            raise Exception("Camera closed")
 
-                print(self.stream.getvalue())
-            except Exception as e:
-                print(e)
-            finally:
-                camera.close()
+        try:
+            self.camera.start_recording(self.stream, 'rgb')
+            self.camera.wait_recording(1)
+            self.camera.stop_recording()
+        except Exception as e:
+            print(e)
+        finally:
+            if self.camera:
+                self.camera.close()
 
 
 if __name__ == '__main__':

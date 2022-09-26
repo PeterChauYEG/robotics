@@ -10,6 +10,8 @@ from threading import Thread, Event
 from queue import Queue
 import time
 import subprocess
+import picamera
+from io import BytesIO
 
 # drone
 DEFAULT_HOST = 'ws://localhost:8000'
@@ -30,6 +32,7 @@ STOP_SPEED = 0
 event = Event()
 monitor_queue = Queue()
 drivetrain_queue = Queue()
+video_stream = BytesIO()
 
 
 def get_args():
@@ -42,6 +45,25 @@ def get_args():
 def get_ip_address():
     ip = subprocess.check_output(['hostname', '-I'])
     return ip.decode('utf-8').split(' ')[0]
+
+
+class VideoStream:
+    def task(self):
+        with picamera.PiCamera() as camera:
+            camera.resolution = (100, 100)
+            print("init camera complete")
+
+            if not camera or camera.closed:
+                raise Exception("Camera closed")
+
+            try:
+                camera.start_recording(self.stream, 'rgb')
+                camera.wait_recording(1)
+                camera.stop_recording()
+            except Exception as e:
+                print(e)
+            finally:
+                camera.close()
 
 
 class Monitor:
@@ -223,10 +245,12 @@ if __name__ == '__main__':
 
     drivetrain = DriveTrain()
     monitor = Monitor()
+    video_stream = VideoStream()
     drone = Drone(host)
 
     drivetrain_thread = Thread(target=drivetrain.task, args=(drivetrain_queue,))
     monitor_thread = Thread(target=monitor.task, args=(monitor_queue,))
+    video_stream_thread = Thread(target=video_stream.task, args=(video_stream,))
 
     loop = asyncio.get_event_loop()
 
@@ -246,11 +270,14 @@ if __name__ == '__main__':
     finally:
         event.set()
 
-        if monitor_thread.is_alive():
+        if monitor_thread and monitor_thread.is_alive():
             monitor_thread.join()
 
-        if drivetrain_thread.is_alive():
+        if drivetrain_thread and drivetrain_thread.is_alive():
             drivetrain_thread.join()
+
+        if video_stream_thread and video_stream_thread.is_alive():
+            video_stream_thread.join()
 
         if drone is not None:
             loop.run_until_complete(drone.close_connection())
