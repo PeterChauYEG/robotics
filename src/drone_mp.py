@@ -31,32 +31,35 @@ class Monitor:
         self.display = None
 
     def init(self):
+        print("init monitor starting")
         self.display = qwiic.QwiicMicroOled()
 
         self.display.begin()
         self.display.scroll_stop()
         self.display.set_font_type(0)
         self.clear()
+        print("init monitor complete")
 
     def clear(self):
         self.display.clear(self.display.PAGE)
         self.display.clear(self.display.ALL)
         self.display.set_cursor(0, 0)
 
-    def display_ip(self, ip):
-        self.clear()
-
-        if ip:
-            self.display.print("ip: ")
-            self.display.set_cursor(0, 8)
-            self.display.print(ip)
-        else:
-            self.display.print("No Internet!")
-
-        self.display.display()
+    # def display_ip(self, ip):
+    #     self.clear()
+    #
+    #     if ip:
+    #         self.display.print("ip: ")
+    #         self.display.set_cursor(0, 8)
+    #         self.display.print(ip)
+    #     else:
+    #         self.display.print("No Internet!")
+    #
+    #     self.display.display()
 
     def display_cmd(self, cmd):
-        self.clear()
+        #self.clear()
+        print("displaying cmd start")
 
         self.display.print("cmd: ")
         self.display.set_cursor(0, 8)
@@ -64,8 +67,12 @@ class Monitor:
 
         self.display.display()
 
+        print("displaying cmd completed")
+
     def task(self, queue_in):
         print("monitor task started")
+
+        self.init()
 
         while True:
             if not queue_in.empty():
@@ -192,7 +199,6 @@ if __name__ == '__main__':
     drivetrain.init()
 
     monitor = Monitor()
-    monitor.init()
     monitor_thread = Thread(target=monitor.task, args=(monitor_queue,))
 
     drone = Drone(drivetrain, host)
@@ -202,7 +208,7 @@ if __name__ == '__main__':
     try:
         print('starting drone')
         monitor_thread.start()
-        
+
         loop.run_until_complete(drone.run())
         loop.run_forever()
 
