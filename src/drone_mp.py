@@ -73,7 +73,7 @@ class Monitor:
 
     def display_name(self):
         self.display.set_cursor(0, 40)
-        self.display.print("nipper")
+        self.display.print("n i p s")
 
     def display_cmd(self, cmd):
         self.clear()
