@@ -66,19 +66,17 @@ class Monitor:
 
     def display_ip(self):
         if self.ip:
-            self.display.set_cursor(0, 24)
+            self.display.set_cursor(0, 16)
             self.display.print(self.ip)
         else:
             self.display.print("No Internet!")
 
     def display_name(self):
-        self.display.set_cursor(0, 40)
+        self.display.set_cursor(0, 32)
         self.display.print("nipper")
 
     def display_cmd(self, cmd):
         self.clear()
-        self.display.print("cmd: ")
-        self.display.set_cursor(0, 8)
         self.display.print(cmd)
 
     def task(self, queue_in):
