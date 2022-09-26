@@ -32,7 +32,7 @@ STOP_SPEED = 0
 event = Event()
 monitor_queue = Queue()
 drivetrain_queue = Queue()
-video_stream = BytesIO()
+video_stream_io = BytesIO()
 
 
 def get_args():
@@ -51,12 +51,12 @@ class VideoStream:
     def __init__(self, camera):
         self.camera = camera
 
-    def task(self, video_stream):
+    def task(self, video_stream_io):
         if not self.camera or self.camera.closed:
             raise Exception("Camera closed")
 
         try:
-            self.camera.start_recording(video_stream, 'rgb')
+            self.camera.start_recording(video_stream_io, 'rgb')
         except Exception as e:
             print(e)
         finally:
@@ -253,7 +253,7 @@ if __name__ == '__main__':
     monitor_thread = None
     # drivetrain_thread = Thread(target=drivetrain.task, args=(drivetrain_queue,))
     # monitor_thread = Thread(target=monitor.task, args=(monitor_queue,))
-    video_stream_thread = Thread(target=video_stream.task, args=(video_stream,))
+    video_stream_thread = Thread(target=video_stream.task, args=(video_stream_io,))
 
     loop = asyncio.get_event_loop()
 
