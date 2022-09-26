@@ -3,6 +3,7 @@ import websockets
 import keyboard
 import sys
 import numpy as np
+import cv2
 
 video_stream = np.empty((128, 112, 3), dtype=np.uint8)
 
@@ -35,16 +36,19 @@ class Brain:
                 if self.websocket is None:
                     print('websocket is None')
 
-                # wait for response and debounce key press
-                if self.key_pressed:
-                    data = await self.websocket.recv()
+                data = await self.websocket.recv()
+                self.handle_msg(data)
 
-                    self.handle_msg(data)
-                    await self.debounce_keyboard_input()
-
-                # get and handle keyboard input
-                keyboard_input = Brain.get_keyboard_input()
-                await self.handle_keyboard_input(keyboard_input)
+                # # wait for response and debounce key press
+                # if self.key_pressed:
+                #     data = await self.websocket.recv()
+                #
+                #     self.handle_msg(data)
+                #     await self.debounce_keyboard_input()
+                #
+                # # get and handle keyboard input
+                # keyboard_input = Brain.get_keyboard_input()
+                # await self.handle_keyboard_input(keyboard_input)
 
         except Exception as e:
             print("Exception: {}".format(e))
@@ -59,9 +63,12 @@ class Brain:
             print('connected')
             self.connected = True
         else:
-            print(data)
             video_stream[:] = np.frombuffer(data, dtype=np.uint8).reshape((128, 112, 3))
             print(video_stream)
+
+            # show video stream
+            cv2.imshow('video stream', video_stream)
+            cv2.waitKey(1)  # wait for 1ms
 
 
     async def debounce_keyboard_input(self):
