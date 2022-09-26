@@ -12,6 +12,8 @@ import time
 import subprocess
 from picamera import PiCamera
 from io import BytesIO
+import numpy as np
+import picamera.array
 
 # drone
 DEFAULT_HOST = 'ws://localhost:8000'
@@ -32,7 +34,7 @@ STOP_SPEED = 0
 event = Event()
 monitor_queue = Queue()
 drivetrain_queue = Queue()
-video_stream_io = BytesIO()
+video_stream_io = np.empty((128, 112, 3), dtype=np.uint8)
 
 
 def get_args():
@@ -52,16 +54,12 @@ class VideoStream:
         self.camera = camera
 
     def task(self, video_stream_io):
-        if not self.camera or self.camera.closed:
-            raise Exception("Camera closed")
+        while not event.is_set():
+            if not self.camera or self.camera.closed:
+                raise Exception("Camera closed")
 
-        try:
-            self.camera.start_recording(video_stream_io, 'rgb')
-        except Exception as e:
-            print(e)
-        finally:
-            if self.camera:
-                self.camera.stop_recording()
+            self.camera.capture(video_stream_io, 'rgb')
+            time.sleep(1)
 
 
 class Monitor:
@@ -211,6 +209,10 @@ class Drone:
     async def loop(self):
         if self.websocket is not None and self.websocket.open:
             while True:
+                if video_stream_io[0][0][0] != 0:
+                    await self.websocket.send(video_stream_io.tobytes())
+                    video_stream_io.fill(0)
+
                 msg = await self.websocket.recv()
                 await self.websocket.send("received")
                 Drone.msg_handler(msg)
@@ -243,6 +245,7 @@ if __name__ == '__main__':
 
     camera = PiCamera()
     camera.resolution = (100, 100)
+    time.sleep(2)
 
     # drivetrain = DriveTrain()
     # monitor = Monitor()
