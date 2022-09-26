@@ -64,16 +64,11 @@ class Brain:
             print('connected')
             self.connected = True
         else:
-            print('unknown message: {}'.format(data))
             video_stream[:] = np.frombuffer(data, dtype=np.uint8).reshape((128, 112, 3))
-            print(video_stream)
-            print(video_stream.shape)
 
-            # plt.imshow(video_stream)
-            # plt.show()
             # show video stream
-            # plt.imshow(video_stream, interpolation='none', aspect='auto')
-            # plt.show()
+            plt.imshow(video_stream, interpolation='none', aspect='auto')
+            plt.show()
 
     async def debounce_keyboard_input(self):
         await asyncio.sleep(self.debounce)

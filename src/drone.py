@@ -1,7 +1,3 @@
-# TODO: show some sweet messages for staging of startup and shutdown
-# do a nicer shutdown
-# do a nicer init
-
 import asyncio
 import websockets
 import sys
@@ -11,9 +7,7 @@ from queue import Queue
 import time
 import subprocess
 from picamera import PiCamera
-from io import BytesIO
 import numpy as np
-import picamera.array
 
 # drone
 DEFAULT_HOST = 'ws://localhost:8000'
@@ -30,11 +24,16 @@ MAX_SPEED = 255
 DEFAULT_SPEED = 100
 STOP_SPEED = 0
 
+# video stream
+WIDTH = 128
+HEIGHT = 112
+CHANNELS = 3
+
 # Shared memory for threads to communicate
 event = Event()
 monitor_queue = Queue()
 drivetrain_queue = Queue()
-video_stream_io = np.empty((128, 112, 3), dtype=np.uint8)
+video_stream_io = np.zeros((WIDTH, HEIGHT, CHANNELS), dtype=np.uint8)
 
 
 def get_args():
@@ -208,16 +207,10 @@ class Drone:
 
     async def loop(self):
         if self.websocket is not None and self.websocket.open:
-            item = np.ones((128, 112, 3), dtype=np.uint8)
-
             while True:
-                if item[0][0][0] == 1:
-                    await self.websocket.send(item.tobytes())
-                    item.fill(0)
-
-                # if video_stream_io[0][0][0] != 0:
-                #     await self.websocket.send(video_stream_io.tobytes())
-                #     video_stream_io.fill(0)
+                if video_stream_io[0][0][0] != 0 and video_stream_io[WIDTH-1][HEIGHT-1][0] != 0:
+                    await self.websocket.send(video_stream_io.tobytes())
+                    video_stream_io.fill(0)
 
                 # msg = await self.websocket.recv()
                 # Drone.msg_handler(msg)
@@ -249,7 +242,7 @@ if __name__ == '__main__':
     host = get_args()
 
     camera = PiCamera()
-    camera.resolution = (128, 112)
+    camera.resolution = (WIDTH, HEIGHT)
     time.sleep(2)
 
     # drivetrain = DriveTrain()
