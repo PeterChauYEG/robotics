@@ -6,7 +6,7 @@ import asyncio
 import websockets
 import sys
 import qwiic
-from threading import Thread
+from threading import Thread, Event
 from queue import Queue
 import time
 
@@ -22,7 +22,7 @@ MAX_SPEED = 255
 DEFAULT_SPEED = 100
 STOP_SPEED = 0
 
-
+event = Event()
 monitor_queue = Queue()
 
 
@@ -74,7 +74,7 @@ class Monitor:
 
         self.init()
 
-        while True:
+        while not event.is_set():
             if not queue_in.empty():
                 msg = queue_in.get()
                 self.display_cmd(msg)
@@ -219,6 +219,7 @@ if __name__ == '__main__':
         print('An error occurred {}'.format(e))
 
     finally:
+        event.set()
         if monitor_thread.is_alive():
             monitor_thread.join()
 
