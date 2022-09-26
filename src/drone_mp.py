@@ -35,6 +35,7 @@ class Monitor:
         self.display = qwiic.QwiicMicroOled()
 
         self.display.begin()
+        self.display.scroll_stop()
         self.display.clear(self.display.ALL)
         print("init monitor complete")
 
