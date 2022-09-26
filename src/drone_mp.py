@@ -50,14 +50,14 @@ class Monitor:
         self.ip = None
 
     def init(self):
-        print("init monitor starting")
+        print("monitor starting")
         self.display = qwiic.QwiicMicroOled()
 
         self.display.begin()
         self.display.scroll_stop()
         self.display.clear(self.display.ALL)
         self.ip = get_ip_address()
-        print("init monitor complete")
+        print("monitor complete")
 
     def clear(self):
         self.display.clear(self.display.PAGE)
@@ -67,11 +67,13 @@ class Monitor:
     def display_ip(self):
         if self.ip:
             self.display.set_cursor(0, 24)
-            self.display.print("ip: ")
-            self.display.set_cursor(0, 32)
             self.display.print(self.ip)
         else:
             self.display.print("No Internet!")
+
+    def display_name(self):
+        self.display.set_cursor(0, 40)
+        self.display.print("nipper")
 
     def display_cmd(self, cmd):
         self.clear()
@@ -87,6 +89,7 @@ class Monitor:
                 msg = queue_in.get()
                 self.display_cmd(msg)
                 self.display_ip()
+                self.display_name()
                 self.display.display()
 
 
@@ -96,7 +99,7 @@ class DriveTrain:
         self.speed = DEFAULT_SPEED
 
     def init(self):
-        print("init drivetrain starting")
+        print("drivetrain starting")
         self.motorboard = qwiic.QwiicScmd()
 
         if self.motorboard.connected == False:
@@ -110,7 +113,7 @@ class DriveTrain:
         self.motorboard.enable()
         time.sleep(.250)
 
-        print("init drivetrain complete")
+        print("drivetrain complete")
 
     def stop(self):
         self.motorboard.set_drive(R_MTR, FWD, STOP_SPEED)
