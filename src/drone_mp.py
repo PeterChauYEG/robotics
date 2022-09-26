@@ -41,6 +41,7 @@ class Monitor:
 
     def clear(self):
         self.display.clear(self.display.PAGE)
+        self.display.scroll_stop()
         self.display.set_cursor(0, 0)
 
     # def display_ip(self, ip):
