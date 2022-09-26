@@ -37,12 +37,12 @@ class Monitor:
         self.display.begin()
         self.display.scroll_stop()
         self.display.set_font_type(0)
-        self.display.clear(self.display.PAGE)
+        self.display.clear(self.display.ALL)
         self.clear()
         print("init monitor complete")
 
     def clear(self):
-        self.display.clear(self.display.ALL)
+        self.display.clear(self.display.PAGE)
         self.display.set_cursor(0, 0)
 
     # def display_ip(self, ip):
