@@ -6,8 +6,13 @@ import asyncio
 import websockets
 import sys
 import qwiic
+from threading import Thread, Event
+from queue import Queue
 import time
+import subprocess
 
+# drone
+DEFAULT_HOST = 'ws://localhost:8000'
 
 # monitor
 LCDWIDTH = 64
@@ -21,44 +26,69 @@ MAX_SPEED = 255
 DEFAULT_SPEED = 100
 STOP_SPEED = 0
 
+# Shared memory for threads to communicate
+event = Event()
+monitor_queue = Queue()
+drivetrain_queue = Queue()
+
+
+def get_args():
+    if len(sys.argv) > 1:
+        return sys.argv[1]
+    else:
+        return DEFAULT_HOST
+
+
+def get_ip_address():
+    ip = subprocess.check_output(['hostname', '-I'])
+    return ip.decode('utf-8').split(' ')[0]
+
 
 class Monitor:
     def __init__(self):
         self.display = None
+        self.ip = None
 
     def init(self):
+        print("monitor starting")
         self.display = qwiic.QwiicMicroOled()
 
         self.display.begin()
         self.display.scroll_stop()
-        self.display.set_font_type(0)
-        self.clear()
+        self.display.clear(self.display.ALL)
+        self.ip = get_ip_address()
+        print("monitor complete")
 
     def clear(self):
         self.display.clear(self.display.PAGE)
-        self.display.clear(self.display.ALL)
+        self.display.scroll_stop()
         self.display.set_cursor(0, 0)
 
-    def display_ip(self, ip):
-        self.clear()
-
-        if ip:
-            self.display.print("ip: ")
-            self.display.set_cursor(0, 8)
-            self.display.print(ip)
+    def display_ip(self):
+        if self.ip:
+            self.display.set_cursor(0, 16)
+            self.display.print(self.ip)
         else:
             self.display.print("No Internet!")
 
-        self.display.display()
+    def display_name(self):
+        self.display.set_cursor(0, 40)
+        self.display.print("n i p s")
 
     def display_cmd(self, cmd):
         self.clear()
-
-        self.display.print("cmd: ")
-        self.display.set_cursor(0, 8)
         self.display.print(cmd)
 
-        self.display.display()
+    def task(self, queue_in):
+        self.init()
+
+        while not event.is_set():
+            if not queue_in.empty() and self.display:
+                msg = queue_in.get()
+                self.display_cmd(msg)
+                self.display_ip()
+                self.display_name()
+                self.display.display()
 
 
 class DriveTrain:
@@ -67,20 +97,21 @@ class DriveTrain:
         self.speed = DEFAULT_SPEED
 
     def init(self):
+        print("drivetrain starting")
         self.motorboard = qwiic.QwiicScmd()
 
         if self.motorboard.connected == False:
             raise Exception("Motor board not connected")
 
         self.motorboard.begin()
-        print("Motor initialized.")
         time.sleep(.250)
 
         self.stop()
 
         self.motorboard.enable()
-        print("Motor enabled")
         time.sleep(.250)
+
+        print("drivetrain complete")
 
     def stop(self):
         self.motorboard.set_drive(R_MTR, FWD, STOP_SPEED)
@@ -106,14 +137,37 @@ class DriveTrain:
         self.speed = speed
 
     def shutdown(self):
-        self.stop()
-        self.motorboard.disable()
+        if self.motorboard:
+            self.stop()
+            self.motorboard.disable()
+
+    def cmd_handler(self, cmd):
+        if cmd == 'forward':
+            self.forward()
+        elif cmd == 'backward':
+            self.backward()
+        elif cmd == 'left':
+            self.left()
+        elif cmd == 'right':
+            self.right()
+        elif cmd == 'stop':
+            self.stop()
+        else:
+            print('unknown command')
+
+    def task(self, queue_in):
+        self.init()
+
+        while not event.is_set():
+            if not queue_in.empty() and self.motorboard:
+                cmd = queue_in.get()
+                self.cmd_handler(cmd)
+
+        self.shutdown()
 
 
 class Drone:
-    def __init__(self, _drivetrain, _monitor, _host):
-        self.drivetrain = _drivetrain
-        self.monitor = _monitor
+    def __init__(self, _host):
         self.host = _host
 
         self.websocket = None
@@ -139,22 +193,19 @@ class Drone:
             while True:
                 msg = await self.websocket.recv()
                 await self.websocket.send("received")
-                self.msg_handler(msg)
+                Drone.msg_handler(msg)
 
-    def msg_handler(self, msg):
+    @staticmethod
+    def msg_handler(msg):
         print(msg)
-        self.monitor.display_cmd(msg)
+        monitor_queue.put(msg)
 
-        if msg == 'forward':
-            self.drivetrain.forward()
-        elif msg == 'backward':
-            self.drivetrain.backward()
-        elif msg == 'left':
-            self.drivetrain.left()
-        elif msg == 'right':
-            self.drivetrain.right()
-        elif msg == 'stop':
-            self.drivetrain.stop()
+        if msg == 'forward' \
+                or msg == 'backward' \
+                or msg == 'left' \
+                or msg == 'right' \
+                or msg == 'stop':
+            drivetrain_queue.put(msg)
         else:
             print('unknown command')
 
@@ -164,49 +215,44 @@ class Drone:
             await self.websocket.close()
             self.websocket = None
 
-    def shutdown(self):
-        if self.drivetrain is not None:
-            self.drivetrain.shutdown()
-
 
 if __name__ == '__main__':
     print('initializing drone')
 
-    host = 'ws://localhost:8000'
-
-    if len(sys.argv) >= 1:
-        host = sys.argv[1]
+    host = get_args()
 
     drivetrain = DriveTrain()
-    drivetrain.init()
-
     monitor = Monitor()
-    monitor.init()
+    drone = Drone(host)
 
-    drone = Drone(drivetrain, monitor, host)
+    drivetrain_thread = Thread(target=drivetrain.task, args=(drivetrain_queue,))
+    monitor_thread = Thread(target=monitor.task, args=(monitor_queue,))
 
     loop = asyncio.get_event_loop()
 
     try:
-        print('starting drone')
+        monitor_thread.start()
+        drivetrain_thread.start()
+
         loop.run_until_complete(drone.run())
         loop.run_forever()
 
     except KeyboardInterrupt:
         print('keyboard interrupt')
 
-        if drone is not None:
-            loop.run_until_complete(drone.close_connection())
-
-            if drone.drivetrain is not None:
-                drone.drivetrain.shutdown()
-
     except Exception as e:
         print('An error occurred {}'.format(e))
 
+    finally:
+        event.set()
+
+        if monitor_thread.is_alive():
+            monitor_thread.join()
+
+        if drivetrain_thread.is_alive():
+            drivetrain_thread.join()
+
         if drone is not None:
             loop.run_until_complete(drone.close_connection())
-            drone.shutdown()
 
-    finally:
         loop.close()
