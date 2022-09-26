@@ -2,6 +2,9 @@ import asyncio
 import websockets
 import keyboard
 import sys
+import numpy as np
+
+video_stream = np.empty((128, 112, 3), dtype=np.uint8)
 
 
 class Brain:
@@ -55,6 +58,11 @@ class Brain:
         elif data == 'connected':
             print('connected')
             self.connected = True
+        else:
+            print(data)
+            video_stream[:] = np.frombuffer(data, dtype=np.uint8).reshape((128, 112, 3))
+            print(video_stream)
+
 
     async def debounce_keyboard_input(self):
         await asyncio.sleep(self.debounce)
