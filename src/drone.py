@@ -211,7 +211,10 @@ class Drone:
             item = np.ones((128, 112, 3), dtype=np.uint8)
 
             while True:
-                await self.websocket.send(item.tobytes())
+                if item[0][0][0] == 1:
+                    await self.websocket.send(item.tobytes())
+                    item.fill(0)
+
                 # if video_stream_io[0][0][0] != 0:
                 #     await self.websocket.send(video_stream_io.tobytes())
                 #     video_stream_io.fill(0)
