@@ -37,3 +37,6 @@ sudo apt install wiringpi
 
 ## i2c
 i2cdetect -y 1
+
+## camera
+sudo apt-get install python-picamera python3-picamera
