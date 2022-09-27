@@ -202,8 +202,9 @@ class Drone:
                 self.websocket = websocket
                 await self.websocket.send('connected')
                 print('sent connected')
+
                 msg = await self.websocket.recv()
-                print('received {}'.format(msg))
+                print('received {}\n'.format(msg))
 
                 await self.loop()
 
@@ -279,7 +280,7 @@ if __name__ == '__main__':
             video_stream_thread.start()
         print('threads started')
 
-        print('starting loop')
+        print('starting loop\n')
         loop.run_until_complete(drone.run())
         loop.run_forever()
 

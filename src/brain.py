@@ -53,7 +53,7 @@ class Brain:
         self.cmd_queue = cmd_queue
 
     def start_server(self):
-        print('Starting server - host: {}, port: {}'.format(self.host, self.port))
+        print('starting server - host: {}, port: {}'.format(self.host, self.port))
         server = websockets.serve(self.handler, self.host, self.port)
         return server
 
@@ -76,16 +76,12 @@ class Brain:
         print('connection closed')
 
     async def consumer_handler(self, websocket):
-        print('start consumer handler')
-
         async for msg in websocket:
             self.handle_msg(msg)
             await websocket.send('ack')
 
 
     async def producer_handler(self, websocket):
-        print('start producer handler')
-
         while True:
             if not cmd_queue.empty():
                 cmd = cmd_queue.get()
@@ -119,7 +115,7 @@ if __name__ == '__main__':
         if object_detection_thread:
             object_detection_thread.start()
 
-        print('starting loop')
+        print('starting loop\n')
         loop.run_until_complete(brain.start_server())
         loop.run_forever()
     except KeyboardInterrupt:
