@@ -219,13 +219,12 @@ class Drone:
                     await self.websocket.send(video_stream_io.tobytes())
                     video_stream_io.fill(0)
 
-                    print('waiting for msg')
                     msg = await self.websocket.recv()
                     Drone.msg_handler(msg)
 
     @staticmethod
     def msg_handler(msg):
-        print(msg)
+        print('received {}\n'.format(msg))
 
         if msg == 'forward' \
                 or msg == 'backward' \

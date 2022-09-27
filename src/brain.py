@@ -4,6 +4,7 @@ import sys
 import numpy as np
 from queue import Queue
 from threading import Thread, Event
+import time
 
 # drone
 DEFAULT_HOST = 'localhost'
@@ -33,43 +34,15 @@ def get_args():
     return host, port
 
 
-async def consumer_handler(websocket):
-    print('start consumer handler')
-
-    # while True:
-    async for msg in websocket:
-        # print('waiting for message')
-        # msg = await websocket.recv()
-        print('new msg')
-        handle_msg(msg)
-        await websocket.send('ack')
-
-
-async def producer_handler(websocket):
-    print('start producer handler')
-
-    while True:
-        if not cmd_queue.empty():
-            cmd = cmd_queue.get()
-            await websocket.send(cmd)
-
-
-def handle_msg(data):
-    if data == 'connected':
-        print('connected')
-    else:
-        print('image received')
-        video_stream[:] = np.frombuffer(data, dtype=np.uint8).reshape((HEIGHT, WIDTH, CHANNELS))
-
-
 class ObjectDetection:
     def __init__(self):
         pass
 
-    def task(self, video_stream, cmd_queue):
-        while not event.is_set() and video_stream[0][0][0] != 0 and video_stream[HEIGHT - 1][WIDTH - 1][0] != 0:
-            cmd_queue.put('forward')
-            video_stream.fill(0)
+    def task(self, video_stream, queue_in):
+        while not event.is_set():
+            if video_stream[0][0][0] != 0:
+                queue_in.put('forward')
+                video_stream.fill(0)
 
 
 class Brain:
@@ -91,8 +64,8 @@ class Brain:
 
         try:
             await asyncio.gather(
-                consumer_handler(websocket),
-                # producer_handler(websocket),
+                self.consumer_handler(websocket),
+                self.producer_handler(websocket),
             )
 
         except Exception as e:
@@ -101,6 +74,33 @@ class Brain:
             self.connected.remove(websocket)
 
         print('connection closed')
+
+    async def consumer_handler(self, websocket):
+        print('start consumer handler')
+
+        async for msg in websocket:
+            self.handle_msg(msg)
+            await websocket.send('ack')
+
+
+    async def producer_handler(self, websocket):
+        print('start producer handler')
+
+        while True:
+            if not cmd_queue.empty():
+                cmd = cmd_queue.get()
+                await websocket.send(cmd)
+                print('sent cmd: {}\n'.format(cmd))
+            else:
+                await asyncio.sleep(0.25)
+
+
+    def handle_msg(self, data):
+        if data == 'connected':
+            print('connected\n')
+        else:
+            print('image received\n')
+            video_stream[:] = np.frombuffer(data, dtype=np.uint8).reshape((HEIGHT, WIDTH, CHANNELS))
 
 
 if __name__ == '__main__':
