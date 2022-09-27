@@ -212,9 +212,11 @@ class Drone:
         if self.websocket is not None and self.websocket.open:
             while True:
                 if video_stream_io[0][0][0] != 0 and video_stream_io[HEIGHT - 1][WIDTH - 1][0] != 0:
+                    print('sending image')
                     await self.websocket.send(video_stream_io.tobytes())
                     video_stream_io.fill(0)
 
+                    print('waiting for msg')
                     msg = await self.websocket.recv()
                     Drone.msg_handler(msg)
 
