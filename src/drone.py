@@ -204,7 +204,7 @@ class Drone:
                 print('sent connected')
 
                 msg = await self.websocket.recv()
-                print('received {}\n'.format(msg))
+                print('received: {}\n'.format(msg))
 
                 await self.loop()
 
@@ -255,15 +255,15 @@ if __name__ == '__main__':
     time.sleep(2)
     print('init camera complete')
 
-    # drivetrain = DriveTrain()
-    # monitor = Monitor()
+    drivetrain = DriveTrain()
+    monitor = Monitor()
     video_stream = VideoStream(camera)
     drone = Drone(host)
 
-    drivetrain_thread = None
-    monitor_thread = None
-    # drivetrain_thread = Thread(target=drivetrain.task, args=(drivetrain_queue,))
-    # monitor_thread = Thread(target=monitor.task, args=(monitor_queue,))
+    # drivetrain_thread = None
+    # monitor_thread = None
+    drivetrain_thread = Thread(target=drivetrain.task, args=(drivetrain_queue,))
+    monitor_thread = Thread(target=monitor.task, args=(monitor_queue,))
     video_stream_thread = Thread(target=video_stream.task, args=(video_stream_io,))
 
     loop = asyncio.get_event_loop()
