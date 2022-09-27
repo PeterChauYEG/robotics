@@ -64,14 +64,12 @@ class VideoStream:
 
 
 class Monitor:
-    def __init__(self):
+    def __init__(self, _display):
         self.display = None
         self.ip = None
 
     def init(self):
         print("monitor starting")
-        self.display = qwiic.QwiicMicroOled()
-
         self.display.begin()
         self.display.scroll_stop()
         self.display.clear(self.display.ALL)
@@ -111,21 +109,18 @@ class Monitor:
 
 
 class DriveTrain:
-    def __init__(self):
-        self.motorboard = None
+    def __init__(self, _motorboard):
+        self.motorboard = _motorboard
         self.speed = DEFAULT_SPEED
 
     def init(self):
         print("drivetrain starting")
-        self.motorboard = qwiic.QwiicScmd()
 
-        if self.motorboard.connected == False:
+        if not self.motorboard.connected:
             raise Exception("Motor board not connected")
 
         self.motorboard.begin()
         time.sleep(.250)
-
-        self.stop()
 
         self.motorboard.enable()
         time.sleep(.250)
@@ -187,15 +182,12 @@ class DriveTrain:
 
 class Drone:
     def __init__(self, _host):
-        self.host = _host
-
         self.websocket = None
+        self.host = _host
 
     async def run(self):
         print('connecting to {}'.format(self.host))
-        return await self.connect_to_server()
 
-    async def connect_to_server(self):
         async with websockets.connect(self.host) as websocket:
             try:
                 print('connected')
@@ -249,14 +241,22 @@ if __name__ == '__main__':
 
     host = get_args()
 
+    print('init monitor starting')
+    display = qwiic.QwiicMicroOled()
+    print('init monitor complete')
+
     print('init camera starting')
     camera = PiCamera()
     camera.resolution = (WIDTH, HEIGHT)
     time.sleep(2)
     print('init camera complete')
 
-    drivetrain = DriveTrain()
-    monitor = Monitor()
+    print('init drivetrain starting')
+    motorboard = qwiic.QwiicScmd()
+    print('init drivetrain complete')
+
+    drivetrain = DriveTrain(motorboard)
+    monitor = Monitor(display)
     video_stream = VideoStream(camera)
     drone = Drone(host)
 
