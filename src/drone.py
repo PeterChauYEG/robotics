@@ -202,6 +202,9 @@ class Drone:
                 self.websocket = websocket
                 await self.websocket.send('connected')
                 print('sent connected')
+                msg = await self.websocket.recv()
+                print('received {}'.format(msg))
+
                 await self.loop()
 
             except websockets.exceptions.ConnectionClosed:

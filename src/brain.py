@@ -36,9 +36,10 @@ def get_args():
 async def consumer_handler(websocket):
     print('start consumer handler')
 
-    while True:
-        print('waiting for message')
-        msg = await websocket.recv()
+    # while True:
+    async for msg in websocket:
+        # print('waiting for message')
+        # msg = await websocket.recv()
         print('new msg')
         handle_msg(msg)
         await websocket.send('ack')
