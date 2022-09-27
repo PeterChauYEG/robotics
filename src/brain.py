@@ -41,8 +41,7 @@ async def consumer_handler(websocket):
         msg = await websocket.recv()
         print('new msg')
         handle_msg(msg)
-
-    print('end consumer handler')
+        await websocket.send('ack')
 
 
 async def producer_handler(websocket):
@@ -52,8 +51,6 @@ async def producer_handler(websocket):
         if not cmd_queue.empty():
             cmd = cmd_queue.get()
             await websocket.send(cmd)
-
-    print('end producer handler')
 
 
 def handle_msg(data):

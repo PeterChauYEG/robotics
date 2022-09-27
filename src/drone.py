@@ -215,8 +215,8 @@ class Drone:
                     await self.websocket.send(video_stream_io.tobytes())
                     video_stream_io.fill(0)
 
-                msg = await self.websocket.recv()
-                Drone.msg_handler(msg)
+                    msg = await self.websocket.recv()
+                    Drone.msg_handler(msg)
 
     @staticmethod
     def msg_handler(msg):
@@ -229,7 +229,7 @@ class Drone:
                 or msg == 'stop':
             drivetrain_queue.put(msg)
             monitor_queue.put(msg)
-        else:
+        elif msg != 'ack':
             print('unknown command')
 
     async def close_connection(self):
