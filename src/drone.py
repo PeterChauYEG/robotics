@@ -211,7 +211,7 @@ class Drone:
     async def loop(self):
         if self.websocket is not None and self.websocket.open:
             while True:
-                if video_stream_io[0][0][0] != 0 and video_stream_io[WIDTH-1][HEIGHT-1][0] != 0:
+                if video_stream_io[0][0][0] != 0 and video_stream_io[HEIGHT - 1][WIDTH - 1][0] != 0:
                     await self.websocket.send(video_stream_io.tobytes())
                     video_stream_io.fill(0)
 

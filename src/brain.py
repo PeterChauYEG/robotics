@@ -66,7 +66,7 @@ class ObjectDetection:
         pass
 
     def task(self, video_stream, cmd_queue):
-        while not event.is_set() and video_stream[0][0][0] != 0 and video_stream[WIDTH - 1][HEIGHT - 1][0] != 0:
+        while not event.is_set() and video_stream[0][0][0] != 0 and video_stream[HEIGHT - 1][WIDTH - 1][0] != 0:
             cmd_queue.put('forward')
             video_stream.fill(0)
 
