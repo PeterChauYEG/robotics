@@ -1,120 +1,28 @@
 import asyncio
 import websockets
-import keyboard
 import sys
 import numpy as np
-import matplotlib.pyplot as plt
+from queue import Queue
+from threading import Thread, Event
 
-video_stream = np.empty((128, 112, 3), dtype=np.uint8)
+# drone
+DEFAULT_HOST = 'localhost'
+DEFAULT_PORT = 8000
 
+# video stream
+WIDTH = 128
+HEIGHT = 112
+CHANNELS = 3
 
-class Brain:
-    def __init__(self, host='localhost', port=8000, debounce=0.5):
-        self.key_pressed = False
-        self.debounce = debounce
-        self.host = host
-        self.port = port
-        self.websocket = None
-        self.connected = False
-
-    def start_server(self):
-        print('Starting server... host: {}, port: {}'.format(self.host, self.port))
-        server = websockets.serve(self.handler, self.host, self.port)
-        return server
-
-    async def handler(self, websocket, path):
-        if self.websocket is None:
-            self.websocket = websocket
-
-        try:
-            while True:
-                if self.connected is False:
-                    data = await websocket.recv()
-                    self.handle_msg(data)
-                    continue
-
-                if self.websocket is None:
-                    print('websocket is None')
-
-                data = await self.websocket.recv()
-                self.handle_msg(data)
-                await self.websocket.send("received")
-
-                # # wait for response and debounce key press
-                # if self.key_pressed:
-                #     data = await self.websocket.recv()
-                #
-                #     self.handle_msg(data)
-                #     await self.debounce_keyboard_input()
-                #
-                # # get and handle keyboard input
-                # keyboard_input = Brain.get_keyboard_input()
-                # await self.handle_keyboard_input(keyboard_input)
-
-        except Exception as e:
-            print("Exception: {}".format(e))
-            self.connected = False
-            self.websocket = None
-
-    def handle_msg(self, data):
-        if data == 'received':
-            print('received\n')
-            self.key_pressed = False
-        elif data == 'connected':
-            print('connected')
-            self.connected = True
-        else:
-            video_stream[:] = np.frombuffer(data, dtype=np.uint8).reshape((128, 112, 3))
-
-            # show video stream
-            plt.imshow(video_stream, interpolation='none', aspect='auto')
-            plt.show()
-
-    async def debounce_keyboard_input(self):
-        await asyncio.sleep(self.debounce)
-
-    @staticmethod
-    def get_keyboard_input():
-        event = keyboard.read_event()
-
-        if event.event_type == keyboard.KEY_DOWN:
-            if keyboard.is_pressed('q'):
-                return 'exit'
-
-            elif keyboard.is_pressed('w'):
-                return 'forward'
-
-            elif keyboard.is_pressed('s'):
-                return 'backward'
-
-            elif keyboard.is_pressed('a'):
-                return 'left'
-
-            elif keyboard.is_pressed('d'):
-                return 'right'
-
-            elif keyboard.is_pressed(' '):
-                return 'stop'
-
-        return None
-
-    async def handle_keyboard_input(self, keyboard_input):
-        if keyboard_input is None:
-            return
-
-        if keyboard_input == 'exit':
-            raise Exception("User exited")
-
-        else:
-            self.key_pressed = True
-            print(keyboard_input)
-            await self.websocket.send(keyboard_input)
+# Shared memory for threads to communicate
+event = Event()
+video_stream = np.empty((HEIGHT, WIDTH, CHANNELS), dtype=np.uint8)
+cmd_queue = Queue()
 
 
-if __name__ == '__main__':
-    print('initializing brain')
-    host = 'localhost'
-    port = 8000
+def get_args():
+    host = DEFAULT_HOST
+    port = DEFAULT_PORT
 
     if len(sys.argv) >= 1:
         host = sys.argv[1]
@@ -122,7 +30,67 @@ if __name__ == '__main__':
     if len(sys.argv) >= 2:
         port = sys.argv[2]
 
-    brain = Brain(host=host, port=port, debounce=0.1)
+    return host, port
+
+
+class Brain:
+    def __init__(self, cmd_queue, host='localhost', port=8000):
+        self.host = host
+        self.port = port
+        self.websocket = None
+        self.connected = set()
+        self.cmd_queue = cmd_queue
+
+    def start_server(self):
+        print('Starting server - host: {}, port: {}'.format(self.host, self.port))
+        server = websockets.serve(self.handler, self.host, self.port)
+        return server
+
+    async def handler(self, websocket, path):
+        self.websocket = websocket
+        self.connected.add(self.websocket)
+
+        try:
+            consumer_task = asyncio.create_task(self.consumer_handler())
+            producer_task = asyncio.create_task(self.producer_handler())
+
+            done, pending = await asyncio.wait(
+                [consumer_task, producer_task],
+                return_when=asyncio.FIRST_COMPLETED,
+            )
+
+            for task in pending:
+                task.cancel()
+        except Exception as e:
+            print(e)
+        finally:
+            self.connected.remove(self.websocket)
+
+    async def consumer_handler(self):
+        async for msg in self.websocket:
+            self.handle_msg(msg)
+
+    async def producer_handler(self):
+        while True:
+            if not cmd_queue.empty():
+                cmd = cmd_queue.get()
+                await self.websocket.send(cmd)
+
+    def handle_msg(self, data):
+        if data == 'connected':
+            print('connected')
+            self.connected = True
+        else:
+            print('image received')
+            video_stream[:] = np.frombuffer(data, dtype=np.uint8).reshape((HEIGHT, WIDTH, CHANNELS))
+
+
+if __name__ == '__main__':
+    print('initializing brain')
+
+    host, port = get_args()
+
+    brain = Brain(cmd_queue=cmd_queue, host=host, port=port)
 
     loop = asyncio.get_event_loop()
 
@@ -138,4 +106,3 @@ if __name__ == '__main__':
         pass
     finally:
         loop.close()
-

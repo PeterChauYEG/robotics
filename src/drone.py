@@ -33,14 +33,16 @@ CHANNELS = 3
 event = Event()
 monitor_queue = Queue()
 drivetrain_queue = Queue()
-video_stream_io = np.zeros((WIDTH, HEIGHT, CHANNELS), dtype=np.uint8)
+video_stream_io = np.zeros((HEIGHT, WIDTH, CHANNELS), dtype=np.uint8)
 
 
 def get_args():
+    host = DEFAULT_HOST
+
     if len(sys.argv) > 1:
-        return sys.argv[1]
-    else:
-        return DEFAULT_HOST
+        host = sys.argv[1]
+
+    return host
 
 
 def get_ip_address():
@@ -212,13 +214,12 @@ class Drone:
                     await self.websocket.send(video_stream_io.tobytes())
                     video_stream_io.fill(0)
 
-                # msg = await self.websocket.recv()
-                # Drone.msg_handler(msg)
+                msg = await self.websocket.recv()
+                Drone.msg_handler(msg)
 
     @staticmethod
     def msg_handler(msg):
         print(msg)
-        monitor_queue.put(msg)
 
         if msg == 'forward' \
                 or msg == 'backward' \
@@ -226,6 +227,7 @@ class Drone:
                 or msg == 'right' \
                 or msg == 'stop':
             drivetrain_queue.put(msg)
+            monitor_queue.put(msg)
         else:
             print('unknown command')
 
@@ -241,9 +243,11 @@ if __name__ == '__main__':
 
     host = get_args()
 
+    print('init camera starting')
     camera = PiCamera()
     camera.resolution = (WIDTH, HEIGHT)
     time.sleep(2)
+    print('init camera complete')
 
     # drivetrain = DriveTrain()
     # monitor = Monitor()
