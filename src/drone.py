@@ -65,7 +65,7 @@ class VideoStream:
 
 class Monitor:
     def __init__(self, _display):
-        self.display = None
+        self.display = _display
         self.ip = None
 
     def init(self):

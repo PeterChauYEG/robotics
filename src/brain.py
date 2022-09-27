@@ -69,6 +69,7 @@ class ObjectDetection:
             else:
                 return 'stop'
         else:
+            print('No object found')
             return 'stop'
 
     @staticmethod
