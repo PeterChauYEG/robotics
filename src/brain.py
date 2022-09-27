@@ -77,19 +77,27 @@ class Brain:
             self.connected.remove(self.websocket)
 
     async def consumer_handler(self):
+        print('start consumer handler')
+
         async for msg in self.websocket:
+            print('new msg')
             self.handle_msg(msg)
 
+        print('end consumer handler')
+
     async def producer_handler(self):
+        print('start producer handler')
+
         while True:
             if not cmd_queue.empty():
                 cmd = cmd_queue.get()
                 await self.websocket.send(cmd)
 
+        print('end producer handler')
+
     def handle_msg(self, data):
         if data == 'connected':
             print('connected')
-            self.connected = True
         else:
             print('image received')
             video_stream[:] = np.frombuffer(data, dtype=np.uint8).reshape((HEIGHT, WIDTH, CHANNELS))
