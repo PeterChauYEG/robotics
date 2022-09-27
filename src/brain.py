@@ -33,6 +33,16 @@ def get_args():
     return host, port
 
 
+class ObjectDetection:
+    def __init__(self):
+        pass
+
+    def task(self, video_stream, cmd_queue):
+        while not event.is_set() and video_stream[0][0][0] != 0 and video_stream[WIDTH-1][HEIGHT-1][0] != 0:
+            cmd_queue.put('forward')
+            video_stream.fill(0)
+
+
 class Brain:
     def __init__(self, cmd_queue, host='localhost', port=8000):
         self.host = host
@@ -91,11 +101,17 @@ if __name__ == '__main__':
     host, port = get_args()
 
     brain = Brain(cmd_queue=cmd_queue, host=host, port=port)
+    object_detection = ObjectDetection()
+
+    object_detection_thread = Thread(target=object_detection.task, args=(video_stream, cmd_queue))
 
     loop = asyncio.get_event_loop()
 
     try:
-        print('starting brain')
+        if object_detection_thread:
+            object_detection_thread.start()
+
+        print('starting loop')
         loop.run_until_complete(brain.start_server())
         loop.run_forever()
     except KeyboardInterrupt:
@@ -105,4 +121,9 @@ if __name__ == '__main__':
         print("Exception: {}".format(e))
         pass
     finally:
+        event.set()
+
+        if object_detection_thread and object_detection_thread.is_alive():
+            object_detection_thread.join()
+
         loop.close()

@@ -263,6 +263,7 @@ if __name__ == '__main__':
     loop = asyncio.get_event_loop()
 
     try:
+        print('stating threads')
         if monitor_thread:
             monitor_thread.start()
 
@@ -271,7 +272,9 @@ if __name__ == '__main__':
 
         if video_stream_thread:
             video_stream_thread.start()
+        print('threads started')
 
+        print('starting loop')
         loop.run_until_complete(drone.run())
         loop.run_forever()
 
