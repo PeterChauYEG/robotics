@@ -36,7 +36,9 @@ def get_args():
 async def consumer_handler(websocket):
     print('start consumer handler')
 
-    async for msg in websocket:
+    while True:
+        print('waiting for message')
+        msg = await websocket.recv()
         print('new msg')
         handle_msg(msg)
 
@@ -90,16 +92,11 @@ class Brain:
         self.connected.add(websocket)
 
         try:
-            consumer_task = asyncio.create_task(consumer_handler(websocket))
-            producer_task = asyncio.create_task(producer_handler(websocket))
-
-            done, pending = await asyncio.wait(
-                [consumer_task, producer_task],
-                return_when=asyncio.FIRST_COMPLETED,
+            await asyncio.gather(
+                consumer_handler(websocket),
+                # producer_handler(websocket),
             )
 
-            for task in pending:
-                task.cancel()
         except Exception as e:
             print(e)
         finally:
