@@ -10,7 +10,7 @@ from PIL import Image
 # drone
 DEFAULT_HOST = 'localhost'
 DEFAULT_PORT = 8000
-PRODUCER_DELAY = 0.2
+PRODUCER_DELAY = 0.1
 
 # video stream
 WIDTH = 128
@@ -71,10 +71,10 @@ class ObjectDetection:
             if abs(abs_y_offset) > abs(abs_x_offset):
                 if center_offset[0] > 0:
                     print('Object is below center')
-                    return 'backward'
+                    return 'forward'
                 else:
                     print('Object is above center')
-                    return 'forward'
+                    return 'backward'
             else:
                 if center_offset[1] > 0:
                     print('Object is to the right of center')
@@ -149,7 +149,7 @@ class WsServer:
         if data == 'connected':
             print('connected\n')
         else:
-            print('image received\n')
+            print('image received')
             video_stream[:] = np.frombuffer(data, dtype=np.uint8).reshape((HEIGHT, WIDTH, CHANNELS))
 
 

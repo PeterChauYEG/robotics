@@ -215,11 +215,11 @@ class Drone:
                     print('waiting for msg')
                     msg = await self.websocket.recv()
                     Drone.msg_handler(msg)
-                    print('processed msg')
+                    print('processed msg\n')
 
     @staticmethod
     def msg_handler(msg):
-        print('received {}\n'.format(msg))
+        print('received {}'.format(msg))
 
         if msg == 'forward' \
                 or msg == 'backward' \
