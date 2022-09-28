@@ -43,7 +43,7 @@ def get_args():
 
     if len(sys.argv) > 1:
         host = sys.argv[1]
-        speed = sys.argv[2]
+        speed = int(sys.argv[2])
 
     return host, speed
 
