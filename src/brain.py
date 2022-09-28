@@ -60,16 +60,28 @@ class ObjectDetection:
             center_offset = ObjectDetection.get_offset_from_center(object)
             print('Center offset: ' + str(center_offset))
 
-            if center_offset[0] > OFFSET_HEIGHT_THRESHOLD_AMOUNT:
-                return 'forward'
-            elif center_offset[0] < OFFSET_HEIGHT_THRESHOLD_AMOUNT:
-                return 'backward'
-            elif center_offset[1] > OFFSET_WIDTH_THRESHOLD_AMOUNT:
-                return 'left'
-            elif center_offset[1] < OFFSET_HEIGHT_THRESHOLD_AMOUNT:
-                return 'right'
-            else:
+            abs_y_offset = abs(center_offset[0])
+            abs_x_offset = abs(center_offset[1])
+
+            if abs_y_offset < OFFSET_HEIGHT_THRESHOLD_AMOUNT and abs_x_offset < OFFSET_WIDTH_THRESHOLD_AMOUNT:
+                print('Object is centered')
                 return 'stop'
+
+            if abs(abs_y_offset) > abs(abs_x_offset):
+                if center_offset[0] > 0:
+                    print('Object is above center')
+                    return 'forward'
+                else:
+                    print('Object is below center')
+                    return 'backward'
+            else:
+                if center_offset[1] > 0:
+                    print('Object is to the right of center')
+                    return 'right'
+                else:
+                    print('Object is to the left of center')
+                    return 'left'
+
         else:
             print('No object found')
             return 'stop'
@@ -120,7 +132,6 @@ class WsServer:
     async def consumer_handler(websocket):
         async for msg in websocket:
             WsServer.handle_msg(msg)
-            await websocket.send('ack')
 
     @staticmethod
     async def producer_handler(websocket):
