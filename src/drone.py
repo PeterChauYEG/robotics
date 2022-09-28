@@ -143,12 +143,12 @@ class DriveTrain:
         self.motorboard.set_drive(L_MTR, FWD, -self.speed)
 
     def left(self):
-        self.motorboard.set_drive(R_MTR, FWD, self.turning_speed)
-        self.motorboard.set_drive(L_MTR, FWD, -self.turning_speed)
+        self.motorboard.set_drive(R_MTR, FWD, self.speed)
+        self.motorboard.set_drive(L_MTR, FWD, -self.speed)
 
     def right(self):
-        self.motorboard.set_drive(R_MTR, FWD, -self.turning_speed)
-        self.motorboard.set_drive(L_MTR, FWD, self.turning_speed)
+        self.motorboard.set_drive(R_MTR, FWD, -self.speed)
+        self.motorboard.set_drive(L_MTR, FWD, self.speed)
 
     def set_speed(self, speed):
         self.speed = speed
