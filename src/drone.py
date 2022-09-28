@@ -193,10 +193,7 @@ class Drone:
                 print('connected')
                 self.websocket = websocket
                 await self.websocket.send('connected')
-                print('sent connected')
-
-                msg = await self.websocket.recv()
-                print('received: {}\n'.format(msg))
+                print('sent connected\n')
 
                 await self.loop()
 

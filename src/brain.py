@@ -170,7 +170,7 @@ if __name__ == '__main__':
 
     try:
         # start threads
-        print('starting threads')
+        print('\nstarting threads')
         if object_detection_thread:
             object_detection_thread.start()
 
