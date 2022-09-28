@@ -5,7 +5,7 @@ from queue import Queue
 from threading import Thread, Event
 from transformers import pipeline
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageDraw
 from datetime import datetime
 import os
 
@@ -61,41 +61,41 @@ class ObjectDetection:
         if object is not None:
             print('Found object: ' + object['label'])
 
-            left, top, right, bottom = ObjectDetection.find_distance_of_box_from_center(object)
-            print('Left: ' + str(left) + ' Top: ' + str(top) + ' Right: ' + str(right) + ' Bottom: ' + str(bottom))
+            object_center_y, object_center_x = ObjectDetection.get_offset_from_center(object)
+            print('Object center: ' + str(object_center_y) + ', ' + str(object_center_x))
 
-            # find largest value of left, top, right, bottom
-            largest = max(left, top, right, bottom)
-
-            if largest == left:
-                if left > OFFSET_WIDTH_THRESHOLD_AMOUNT:
+            if abs(object_center_y) > abs(object_center_x):
+                if object_center_y < OFFSET_HEIGHT_THRESHOLD_AMOUNT:
+                    print('Object is below center')
+                    return 'backward'
+                elif object_center_y > OFFSET_HEIGHT_THRESHOLD_AMOUNT:
+                    print('Object is above center')
+                    return 'forward'
+                else:
+                    print('Object in threshold')
+                    return 'stop'
+            else:
+                if object_center_x < OFFSET_WIDTH_THRESHOLD_AMOUNT:
                     print('Object is to the left of center')
                     return 'left'
-                return 'stop'
-            elif largest == top:
-                if top > OFFSET_HEIGHT_THRESHOLD_AMOUNT:
-                    print('Object is above center')
-                    return 'backward'
-                return 'stop'
-            elif largest == right:
-                if right > OFFSET_WIDTH_THRESHOLD_AMOUNT:
+                elif object_center_x > OFFSET_WIDTH_THRESHOLD_AMOUNT:
                     print('Object is to the right of center')
                     return 'right'
-                return 'stop'
-            elif largest == bottom:
-                if bottom > OFFSET_HEIGHT_THRESHOLD_AMOUNT:
-                    print('Object is below center')
-                    return 'forward'
-                return 'stop'
+                else:
+                    print('Object in threshold')
+                    return 'stop'
 
         else:
             print('No object found')
             return 'stop'
 
     @staticmethod
-    def find_distance_of_box_from_center(object):
+    def get_offset_from_center(object):
         box = object['box']
-        return box['ymin'], HEIGHT - box['ymax'], box['xmin'], WIDTH - box['xmax']
+        object_center = (box['ymax'] - box['ymin']) / 2 + box['ymin'], (box['xmax'] - box['xmin']) / 2 + box['xmin']
+
+        # 64 - ((0 - 40) / 2) = 52
+        return IMG_CENTER[0] - object_center[0], IMG_CENTER[1] - object_center[1]
 
     @staticmethod
     def find_object(predictions):
@@ -105,11 +105,32 @@ class ObjectDetection:
         return None
 
     @staticmethod
-    def save_image(img_pil):
+    def save_image(img_pil, predictions):
         dir_path = os.getcwd()
 
-        # time based file name in relative path imgs yyyymmdd_hhmmss.jpg
-        img_pil.save(dir_path + '/imgs/' + datetime.now().strftime("%Y%m%d_%H%M%S") + '.jpg')
+        # time based file name in relative path imgs yyyymmdd_hhmmss and prediction box
+        path = dir_path + '/imgs/' + datetime.now().strftime("%Y%m%d_%H%M%S")
+
+        # if prediction, add path
+        object = ObjectDetection.find_object(predictions)
+
+        if object is not None:
+            object_center_y, object_center_x = ObjectDetection.get_offset_from_center(object)
+            print('object_center_y: ' + str(object_center_y) + ' object_center_x: ' + str(object_center_x))
+            path = path + '_y' + str(object_center_y) + '_x' + str(object_center_x)
+
+            # add rectangle to pil image
+            box = object['box']
+            # get box size
+            box_size = (box['xmax'] - box['xmin'], box['ymax'] - box['ymin'])
+            box_shape = (box['xmin'], box['ymin']), box_size[0], box_size[1]
+            draw = ImageDraw.Draw(img_pil)
+            draw.rectangle(box_shape, outline='red', width=5)
+
+            cmd = ObjectDetection.determine_command(predictions)
+            path = path + '_' + cmd
+
+        img_pil.save(path + '.jpg')
 
     def predict(self, img_pil):
         return self.classifier(img_pil)
@@ -119,9 +140,10 @@ class ObjectDetection:
             if video_stream[0][0][0] != 0:
                 img_pil = Image.fromarray(video_stream)
 
-                ObjectDetection.save_image(img_pil)
-
                 predictions = self.predict(img_pil)
+
+                ObjectDetection.save_image(img_pil, predictions)
+
                 cmd = ObjectDetection.determine_command(predictions)
                 queue_in.put(cmd)
                 video_stream.fill(0)
@@ -154,6 +176,7 @@ class WsServer:
             if not cmd_queue.empty():
                 cmd = cmd_queue.get()
                 await websocket.send(cmd)
+                # await websocket.send('ack')
                 print('sent cmd: {}\n'.format(cmd))
             else:
                 await asyncio.sleep(PRODUCER_DELAY)
