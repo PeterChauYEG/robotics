@@ -56,7 +56,9 @@ class ObjectDetection:
 
         if object is not None:
             print('Found object: ' + object['label'])
+
             center_offset = ObjectDetection.get_offset_from_center(object)
+            print('Center offset: ' + str(center_offset))
 
             if center_offset[0] > OFFSET_HEIGHT_THRESHOLD_AMOUNT:
                 return 'forward'

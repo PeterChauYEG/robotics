@@ -21,7 +21,7 @@ L_MTR = 1
 FWD = 0
 BWD = 1
 MAX_SPEED = 255
-DEFAULT_SPEED = 100
+DEFAULT_SPEED = 50
 STOP_SPEED = 0
 
 # video stream
