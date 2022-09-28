@@ -22,7 +22,6 @@ FWD = 0
 BWD = 1
 MAX_SPEED = 255
 DEFAULT_SPEED = 50
-DEFAULT_TURNING_SPEED = 50
 STOP_SPEED = 0
 
 # video stream
@@ -40,11 +39,13 @@ video_stream_io = np.zeros((HEIGHT, WIDTH, CHANNELS), dtype=np.uint8)
 
 def get_args():
     host = DEFAULT_HOST
+    speed = DEFAULT_SPEED
 
     if len(sys.argv) > 1:
         host = sys.argv[1]
+        speed = sys.argv[2]
 
-    return host
+    return host, speed
 
 
 def get_ip_address():
@@ -111,10 +112,9 @@ class Monitor:
 
 
 class DriveTrain:
-    def __init__(self, _motorboard):
+    def __init__(self, _motorboard, speed):
         self.motorboard = _motorboard
-        self.speed = DEFAULT_SPEED
-        self.turning_speed = DEFAULT_TURNING_SPEED
+        self.speed = speed
 
     def init(self):
         print("drivetrain starting")
@@ -241,7 +241,7 @@ class Drone:
 if __name__ == '__main__':
     print('initializing drone')
 
-    host = get_args()
+    host, speed = get_args()
 
     print('init monitor starting')
     display = qwiic.QwiicMicroOled()
@@ -257,7 +257,7 @@ if __name__ == '__main__':
     motorboard = qwiic.QwiicScmd()
     print('init drivetrain complete')
 
-    drivetrain = DriveTrain(motorboard)
+    drivetrain = DriveTrain(motorboard, speed)
     monitor = Monitor(display)
     video_stream = VideoStream(camera)
     drone = Drone(host)
