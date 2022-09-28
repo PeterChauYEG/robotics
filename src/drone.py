@@ -22,6 +22,7 @@ FWD = 0
 BWD = 1
 MAX_SPEED = 255
 DEFAULT_SPEED = 50
+DEFAULT_TURNING_SPEED = 25
 STOP_SPEED = 0
 
 # video stream
@@ -112,6 +113,7 @@ class DriveTrain:
     def __init__(self, _motorboard):
         self.motorboard = _motorboard
         self.speed = DEFAULT_SPEED
+        self.turning_speed = DEFAULT_TURNING_SPEED
 
     def init(self):
         print("drivetrain starting")
@@ -140,12 +142,12 @@ class DriveTrain:
         self.motorboard.set_drive(L_MTR, FWD, -self.speed)
 
     def left(self):
-        self.motorboard.set_drive(R_MTR, FWD, self.speed)
-        self.motorboard.set_drive(L_MTR, FWD, -self.speed)
+        self.motorboard.set_drive(R_MTR, FWD, self.turning_speed)
+        self.motorboard.set_drive(L_MTR, FWD, -self.turning_speed)
 
     def right(self):
-        self.motorboard.set_drive(R_MTR, FWD, -self.speed)
-        self.motorboard.set_drive(L_MTR, FWD, self.speed)
+        self.motorboard.set_drive(R_MTR, FWD, -self.turning_speed)
+        self.motorboard.set_drive(L_MTR, FWD, self.turning_speed)
 
     def set_speed(self, speed):
         self.speed = speed

@@ -69,11 +69,11 @@ class ObjectDetection:
 
             if abs(abs_y_offset) > abs(abs_x_offset):
                 if center_offset[0] > 0:
-                    print('Object is above center')
-                    return 'forward'
-                else:
                     print('Object is below center')
                     return 'backward'
+                else:
+                    print('Object is above center')
+                    return 'forward'
             else:
                 if center_offset[1] > 0:
                     print('Object is to the right of center')
