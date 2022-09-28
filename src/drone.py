@@ -28,7 +28,7 @@ STOP_SPEED = 0
 WIDTH = 128
 HEIGHT = 112
 CHANNELS = 3
-VIDEO_CAPTURE_DELAY = 0.5
+VIDEO_CAPTURE_DELAY = 0.25
 
 # Shared memory for threads to communicate
 event = Event()
