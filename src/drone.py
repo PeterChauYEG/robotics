@@ -22,13 +22,14 @@ FWD = 0
 BWD = 1
 MAX_SPEED = 255
 DEFAULT_SPEED = 50
-DEFAULT_TURNING_SPEED = 25
+DEFAULT_TURNING_SPEED = 50
 STOP_SPEED = 0
 
 # video stream
 WIDTH = 128
 HEIGHT = 112
 CHANNELS = 3
+VIDEO_CAPTURE_DELAY = 0.5
 
 # Shared memory for threads to communicate
 event = Event()
@@ -61,7 +62,7 @@ class VideoStream:
                 raise Exception("Camera closed")
 
             self.camera.capture(video_stream_io, 'rgb')
-            time.sleep(1)
+            time.sleep(VIDEO_CAPTURE_DELAY)
 
 
 class Monitor:

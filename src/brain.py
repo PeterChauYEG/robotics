@@ -10,6 +10,7 @@ from PIL import Image
 # drone
 DEFAULT_HOST = 'localhost'
 DEFAULT_PORT = 8000
+PRODUCER_DELAY = 0.2
 
 # video stream
 WIDTH = 128
@@ -141,7 +142,7 @@ class WsServer:
                 await websocket.send(cmd)
                 print('sent cmd: {}\n'.format(cmd))
             else:
-                await asyncio.sleep(0.25)
+                await asyncio.sleep(PRODUCER_DELAY)
 
     @staticmethod
     def handle_msg(data):
