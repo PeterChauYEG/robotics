@@ -212,8 +212,10 @@ class Drone:
                     await self.websocket.send(video_stream_io.tobytes())
                     video_stream_io.fill(0)
 
+                    print('waiting for msg')
                     msg = await self.websocket.recv()
                     Drone.msg_handler(msg)
+                    print('processed msg')
 
     @staticmethod
     def msg_handler(msg):
@@ -269,7 +271,7 @@ if __name__ == '__main__':
     loop = asyncio.get_event_loop()
 
     try:
-        print('stating threads')
+        print('\nstarting threads')
         if monitor_thread:
             monitor_thread.start()
 
@@ -280,7 +282,7 @@ if __name__ == '__main__':
             video_stream_thread.start()
         print('threads started')
 
-        print('starting loop\n')
+        print('\nstarting loop\n')
         loop.run_until_complete(drone.run())
         loop.run_forever()
 
