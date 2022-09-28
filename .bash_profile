@@ -19,7 +19,7 @@ alias la="ls -la"
 alias ".."="cd .."
 alias "..."="cd ..; cd .."
 
-alias drone="python3 ~/robotics/src/drone.py ws://192.168.0.182:8000"
+alias drone="python3 ~/robotics/src/drone.py ws://192.168.0.181:8000 100"
 alias i2c_test="python3 ~/robotics/src/i2c_test.py"
 alias oled_test="python3 ~/robotics/src/oled_test.py"
 alias motor_test="python3 ~/robotics/src/motor_test.py"

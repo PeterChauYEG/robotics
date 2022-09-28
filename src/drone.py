@@ -41,7 +41,7 @@ def get_args():
     host = DEFAULT_HOST
     speed = DEFAULT_SPEED
 
-    if len(sys.argv) > 1:
+    if len(sys.argv) > 2:
         host = sys.argv[1]
         speed = int(sys.argv[2])
 
@@ -115,6 +115,7 @@ class DriveTrain:
     def __init__(self, _motorboard, speed):
         self.motorboard = _motorboard
         self.speed = speed
+        self.turn_speed = speed / 2
 
     def init(self):
         print("drivetrain starting")
@@ -143,12 +144,12 @@ class DriveTrain:
         self.motorboard.set_drive(L_MTR, FWD, -self.speed)
 
     def left(self):
-        self.motorboard.set_drive(R_MTR, FWD, self.speed)
-        self.motorboard.set_drive(L_MTR, FWD, -self.speed)
+        self.motorboard.set_drive(R_MTR, FWD, self.turn_speed)
+        self.motorboard.set_drive(L_MTR, FWD, -self.turn_speed)
 
     def right(self):
-        self.motorboard.set_drive(R_MTR, FWD, -self.speed)
-        self.motorboard.set_drive(L_MTR, FWD, self.speed)
+        self.motorboard.set_drive(R_MTR, FWD, -self.turn_speed)
+        self.motorboard.set_drive(L_MTR, FWD, self.turn_speed)
 
     def set_speed(self, speed):
         self.speed = speed
@@ -243,9 +244,9 @@ if __name__ == '__main__':
 
     host, speed = get_args()
 
-    print('init monitor starting')
-    display = qwiic.QwiicMicroOled()
-    print('init monitor complete')
+    # print('init monitor starting')
+    # display = qwiic.QwiicMicroOled()
+    # print('init monitor complete')
 
     print('init camera starting')
     camera = PiCamera()
@@ -253,19 +254,19 @@ if __name__ == '__main__':
     time.sleep(2)
     print('init camera complete')
 
-    print('init drivetrain starting')
-    motorboard = qwiic.QwiicScmd()
-    print('init drivetrain complete')
+    # print('init drivetrain starting')
+    # motorboard = qwiic.QwiicScmd()
+    # print('init drivetrain complete')
 
-    drivetrain = DriveTrain(motorboard, speed)
-    monitor = Monitor(display)
+    # drivetrain = DriveTrain(motorboard, speed)
+    # monitor = Monitor(display)
     video_stream = VideoStream(camera)
     drone = Drone(host)
 
-    # drivetrain_thread = None
-    # monitor_thread = None
-    drivetrain_thread = Thread(target=drivetrain.task, args=(drivetrain_queue,))
-    monitor_thread = Thread(target=monitor.task, args=(monitor_queue,))
+    drivetrain_thread = None
+    monitor_thread = None
+    # drivetrain_thread = Thread(target=drivetrain.task, args=(drivetrain_queue,))
+    # monitor_thread = Thread(target=monitor.task, args=(monitor_queue,))
     video_stream_thread = Thread(target=video_stream.task, args=(video_stream_io,))
 
     loop = asyncio.get_event_loop()
