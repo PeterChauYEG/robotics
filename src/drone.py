@@ -30,12 +30,6 @@ HEIGHT = 112
 CHANNELS = 3
 VIDEO_CAPTURE_DELAY = 0.25
 
-# Shared memory for threads to communicate
-event = Event()
-monitor_queue = Queue()
-drivetrain_queue = Queue()
-video_stream_io = np.zeros((HEIGHT, WIDTH, CHANNELS), dtype=np.uint8)
-
 
 def get_args():
     host = DEFAULT_HOST
@@ -243,6 +237,12 @@ if __name__ == '__main__':
     print('initializing drone')
 
     host, speed = get_args()
+
+    # Shared memory for threads to communicate
+    event = Event()
+    monitor_queue = Queue()
+    drivetrain_queue = Queue()
+    video_stream_io = np.zeros((HEIGHT, WIDTH, CHANNELS), dtype=np.uint8)
 
     # print('init monitor starting')
     # display = qwiic.QwiicMicroOled()

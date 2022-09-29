@@ -31,11 +31,6 @@ CENTER_OFFSET_THRESHOLD = 0.1
 OFFSET_HEIGHT_THRESHOLD_AMOUNT = IMG_CENTER[0] * CENTER_OFFSET_THRESHOLD
 OFFSET_WIDTH_THRESHOLD_AMOUNT = IMG_CENTER[1] * CENTER_OFFSET_THRESHOLD / 2
 
-# Shared memory for threads to communicate
-event = Event()
-video_stream = np.zeros((HEIGHT, WIDTH, CHANNELS), dtype=np.uint8)
-cmd_queue = Queue()
-
 
 def get_args():
     host = DEFAULT_HOST
@@ -55,43 +50,31 @@ class ObjectDetection:
         self.classifier = _classifier
 
     @staticmethod
-    def determine_command(predictions):
-        object = ObjectDetection.find_object(predictions)
-
-        if object is not None:
-            print('Found object: ' + object['label'])
-
-            object_center_y, object_center_x = ObjectDetection.get_offset_from_center(object)
-            print('Object center: ' + str(object_center_y) + ', ' + str(object_center_x))
-
-            if abs(object_center_y) > abs(object_center_x):
-                if object_center_y < OFFSET_HEIGHT_THRESHOLD_AMOUNT:
-                    print('Object is below center')
-                    return 'backward'
-                elif object_center_y > OFFSET_HEIGHT_THRESHOLD_AMOUNT:
-                    print('Object is above center')
-                    return 'forward'
-                else:
-                    print('Object in threshold')
-                    return 'stop'
+    def determine_command(object_center_y, object_center_x):
+        if abs(object_center_y) >= abs(object_center_x):
+            if object_center_y < OFFSET_HEIGHT_THRESHOLD_AMOUNT:
+                print('Object is below center')
+                return 'backward'
+            elif object_center_y > OFFSET_HEIGHT_THRESHOLD_AMOUNT:
+                print('Object is above center')
+                return 'forward'
             else:
-                if object_center_x < OFFSET_WIDTH_THRESHOLD_AMOUNT:
-                    print('Object is to the left of center')
-                    return 'left'
-                elif object_center_x > OFFSET_WIDTH_THRESHOLD_AMOUNT:
-                    print('Object is to the right of center')
-                    return 'right'
-                else:
-                    print('Object in threshold')
-                    return 'stop'
-
+                print('Object in threshold')
+                return 'stop'
         else:
-            print('No object found')
-            return 'stop'
+            if object_center_x < OFFSET_WIDTH_THRESHOLD_AMOUNT:
+                print('Object is to the left of center')
+                return 'left'
+            elif object_center_x > OFFSET_WIDTH_THRESHOLD_AMOUNT:
+                print('Object is to the right of center')
+                return 'right'
+            else:
+                print('Object in threshold')
+                return 'stop'
 
     @staticmethod
-    def get_offset_from_center(object):
-        box = object['box']
+    def get_offset_from_center(detected_object):
+        box = detected_object['box']
         object_center = (box['ymax'] - box['ymin']) / 2 + box['ymin'], (box['xmax'] - box['xmin']) / 2 + box['xmin']
 
         # 64 - ((0 - 40) / 2) = 52
@@ -105,32 +88,23 @@ class ObjectDetection:
         return None
 
     @staticmethod
-    def save_image(img_pil, predictions):
+    def save_image(img_pil, object_center_y, object_center_x, cmd, box):
+        # abstract to get path
         dir_path = os.getcwd()
 
-        # time based file name in relative path imgs yyyymmdd_hhmmss and prediction box
-        path = dir_path + '/imgs/' + datetime.now().strftime("%Y%m%d_%H%M%S")
+        time = datetime.now().strftime("%Y%m%d_%H%M%S")
+        coord = '_' + str(object_center_y) + '_' + str(object_center_x)
 
-        # if prediction, add path
-        object = ObjectDetection.find_object(predictions)
+        path = dir_path + '/imgs/' + time + coord + '_' + cmd + '.jpg'
 
-        if object is not None:
-            object_center_y, object_center_x = ObjectDetection.get_offset_from_center(object)
-            print('object_center_y: ' + str(object_center_y) + ' object_center_x: ' + str(object_center_x))
-            path = path + '_y' + str(object_center_y) + '_x' + str(object_center_x)
+        # abstract to draw box
+        box_size = (box['xmax'] - box['xmin'], box['ymax'] - box['ymin'])
+        box_shape = (box['xmin'], box['ymin']), box_size[0], box_size[1]
 
-            # add rectangle to pil image
-            box = object['box']
-            # get box size
-            box_size = (box['xmax'] - box['xmin'], box['ymax'] - box['ymin'])
-            box_shape = (box['xmin'], box['ymin']), box_size[0], box_size[1]
-            draw = ImageDraw.Draw(img_pil)
-            draw.rectangle(box_shape, outline='red', width=5)
+        draw = ImageDraw.Draw(img_pil)
+        draw.rectangle(box_shape, outline='red', width=5)
 
-            cmd = ObjectDetection.determine_command(predictions)
-            path = path + '_' + cmd
-
-        img_pil.save(path + '.jpg')
+        img_pil.save(path)
 
     def predict(self, img_pil):
         return self.classifier(img_pil)
@@ -138,13 +112,25 @@ class ObjectDetection:
     def task(self, video_stream, queue_in):
         while not event.is_set():
             if video_stream[0][0][0] != 0:
+                cmd = 'stop'
+
                 img_pil = Image.fromarray(video_stream)
-
                 predictions = self.predict(img_pil)
+                detected_object = ObjectDetection.find_object(predictions)
 
-                ObjectDetection.save_image(img_pil, predictions)
+                if detected_object is not None:
+                    label = detected_object['label']
+                    score = round(detected_object['score'] * 100, 2)
+                    box = detected_object['box']
 
-                cmd = ObjectDetection.determine_command(predictions)
+                    object_center_y, object_center_x = ObjectDetection.get_offset_from_center(detected_object)
+                    print("detected {} {}% @ {}, {}".format(label, score, object_center_y, object_center_x))
+
+                    cmd = ObjectDetection.determine_command(object_center_y, object_center_x)
+                    ObjectDetection.save_image(img_pil, object_center_y, object_center_x, cmd, box)
+                else:
+                    print('No object detected')
+
                 queue_in.put(cmd)
                 video_stream.fill(0)
 
@@ -176,7 +162,6 @@ class WsServer:
             if not cmd_queue.empty():
                 cmd = cmd_queue.get()
                 await websocket.send(cmd)
-                # await websocket.send('ack')
                 print('sent cmd: {}\n'.format(cmd))
             else:
                 await asyncio.sleep(PRODUCER_DELAY)
@@ -195,6 +180,11 @@ if __name__ == '__main__':
 
     # args
     host, port = get_args()
+
+    # Shared memory for threads to communicate
+    event = Event()
+    video_stream = np.zeros((HEIGHT, WIDTH, CHANNELS), dtype=np.uint8)
+    cmd_queue = Queue()
 
     # init
     classifier = pipeline(PIPELINE_TYPE, model=MODEL_NAME)
