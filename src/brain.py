@@ -10,6 +10,7 @@ from datetime import datetime
 import os
 
 # drone
+DEFAULT_TAKE_IMAGES = False
 DEFAULT_HOST = 'localhost'
 DEFAULT_PORT = 8000
 PRODUCER_DELAY = 0.1
@@ -35,19 +36,20 @@ OFFSET_WIDTH_THRESHOLD_AMOUNT = IMG_CENTER[1] * CENTER_OFFSET_THRESHOLD / 2
 def get_args():
     host = DEFAULT_HOST
     port = DEFAULT_PORT
+    take_images = DEFAULT_TAKE_IMAGES
 
-    if len(sys.argv) >= 1:
+    if len(sys.argv) >= 3:
         host = sys.argv[1]
-
-    if len(sys.argv) >= 2:
         port = sys.argv[2]
+        take_images = sys.argv[3] == 'true'
 
-    return host, port
+    return host, port, take_images
 
 
 class ObjectDetection:
-    def __init__(self, _classifier):
+    def __init__(self, _classifier, _take_images):
         self.classifier = _classifier
+        self.take_images = _take_images
 
     @staticmethod
     def determine_command(object_center_y, object_center_x):
@@ -127,7 +129,9 @@ class ObjectDetection:
                     print("detected {} {}% @ {}, {}".format(label, score, object_center_y, object_center_x))
 
                     cmd = ObjectDetection.determine_command(object_center_y, object_center_x)
-                    ObjectDetection.save_image(img_pil, object_center_y, object_center_x, cmd, box)
+
+                    if self.take_images:
+                        ObjectDetection.save_image(img_pil, object_center_y, object_center_x, cmd, box)
                 else:
                     print('No object detected')
 
@@ -179,7 +183,7 @@ if __name__ == '__main__':
     print('initializing brain')
 
     # args
-    host, port = get_args()
+    host, port, take_images = get_args()
 
     # Shared memory for threads to communicate
     event = Event()
@@ -189,7 +193,7 @@ if __name__ == '__main__':
     # init
     classifier = pipeline(PIPELINE_TYPE, model=MODEL_NAME)
 
-    object_detection = ObjectDetection(classifier)
+    object_detection = ObjectDetection(classifier, take_images)
 
     # threads
     object_detection_thread = Thread(target=object_detection.task, args=(video_stream, cmd_queue))

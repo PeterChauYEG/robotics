@@ -244,9 +244,9 @@ if __name__ == '__main__':
     drivetrain_queue = Queue()
     video_stream_io = np.zeros((HEIGHT, WIDTH, CHANNELS), dtype=np.uint8)
 
-    # print('init monitor starting')
-    # display = qwiic.QwiicMicroOled()
-    # print('init monitor complete')
+    print('init monitor starting')
+    display = qwiic.QwiicMicroOled()
+    print('init monitor complete')
 
     print('init camera starting')
     camera = PiCamera()
@@ -254,19 +254,19 @@ if __name__ == '__main__':
     time.sleep(2)
     print('init camera complete')
 
-    # print('init drivetrain starting')
-    # motorboard = qwiic.QwiicScmd()
-    # print('init drivetrain complete')
+    print('init drivetrain starting')
+    motorboard = qwiic.QwiicScmd()
+    print('init drivetrain complete')
 
-    # drivetrain = DriveTrain(motorboard, speed)
-    # monitor = Monitor(display)
+    drivetrain = DriveTrain(motorboard, speed)
+    monitor = Monitor(display)
     video_stream = VideoStream(camera)
     drone = Drone(host)
 
-    drivetrain_thread = None
-    monitor_thread = None
-    # drivetrain_thread = Thread(target=drivetrain.task, args=(drivetrain_queue,))
-    # monitor_thread = Thread(target=monitor.task, args=(monitor_queue,))
+    # drivetrain_thread = None
+    # monitor_thread = None
+    drivetrain_thread = Thread(target=drivetrain.task, args=(drivetrain_queue,))
+    monitor_thread = Thread(target=monitor.task, args=(monitor_queue,))
     video_stream_thread = Thread(target=video_stream.task, args=(video_stream_io,))
 
     loop = asyncio.get_event_loop()
