@@ -8,6 +8,7 @@ import time
 import subprocess
 from picamera import PiCamera
 import numpy as np
+import json
 
 # drone
 DEFAULT_HOST = 'ws://localhost:8000'
@@ -20,8 +21,6 @@ R_MTR = 0
 L_MTR = 1
 FWD = 0
 BWD = 1
-MAX_SPEED = 255
-DEFAULT_SPEED = 50
 STOP_SPEED = 0
 
 # video stream
@@ -33,13 +32,11 @@ VIDEO_CAPTURE_DELAY = 0.25
 
 def get_args():
     host = DEFAULT_HOST
-    speed = DEFAULT_SPEED
 
-    if len(sys.argv) > 2:
+    if len(sys.argv) > 1:
         host = sys.argv[1]
-        speed = int(sys.argv[2])
 
-    return host, speed
+    return host
 
 
 def get_ip_address():
@@ -106,10 +103,8 @@ class Monitor:
 
 
 class DriveTrain:
-    def __init__(self, _motorboard, speed):
+    def __init__(self, _motorboard):
         self.motorboard = _motorboard
-        self.speed = speed
-        self.turn_speed = speed / 2
 
     def init(self):
         print("drivetrain starting")
@@ -129,24 +124,21 @@ class DriveTrain:
         self.motorboard.set_drive(R_MTR, FWD, STOP_SPEED)
         self.motorboard.set_drive(L_MTR, FWD, STOP_SPEED)
 
-    def forward(self):
-        self.motorboard.set_drive(R_MTR, FWD, self.speed)
-        self.motorboard.set_drive(L_MTR, FWD, self.speed)
+    def forward(self, speed):
+        self.motorboard.set_drive(R_MTR, FWD, speed)
+        self.motorboard.set_drive(L_MTR, FWD, speed)
 
-    def backward(self):
-        self.motorboard.set_drive(R_MTR, FWD, -self.speed)
-        self.motorboard.set_drive(L_MTR, FWD, -self.speed)
+    def backward(self, speed):
+        self.motorboard.set_drive(R_MTR, FWD, -speed)
+        self.motorboard.set_drive(L_MTR, FWD, -speed)
 
-    def left(self):
-        self.motorboard.set_drive(R_MTR, FWD, self.turn_speed)
-        self.motorboard.set_drive(L_MTR, FWD, -self.turn_speed)
+    def left(self, speed):
+        self.motorboard.set_drive(R_MTR, FWD, speed)
+        self.motorboard.set_drive(L_MTR, FWD, -speed)
 
-    def right(self):
-        self.motorboard.set_drive(R_MTR, FWD, -self.turn_speed)
-        self.motorboard.set_drive(L_MTR, FWD, self.turn_speed)
-
-    def set_speed(self, speed):
-        self.speed = speed
+    def right(self, speed):
+        self.motorboard.set_drive(R_MTR, FWD, -speed)
+        self.motorboard.set_drive(L_MTR, FWD, speed)
 
     def shutdown(self):
         if self.motorboard:
@@ -154,15 +146,17 @@ class DriveTrain:
             self.motorboard.disable()
 
     def cmd_handler(self, cmd):
-        if cmd == 'forward':
-            self.forward()
-        elif cmd == 'backward':
-            self.backward()
-        elif cmd == 'left':
-            self.left()
-        elif cmd == 'right':
-            self.right()
-        elif cmd == 'stop':
+        json_cmd = json.loads(cmd)
+
+        if json_cmd['action'] == 'forward':
+            self.forward(json_cmd['speed'])
+        elif json_cmd['action'] == 'backward':
+            self.backward(json_cmd['speed'])
+        elif json_cmd['action'] == 'left':
+            self.left(json_cmd['speed'])
+        elif json_cmd['action'] == 'right':
+            self.right(json_cmd['speed'])
+        elif json_cmd['action'] == 'stop':
             self.stop()
         else:
             print('unknown command')
@@ -215,16 +209,8 @@ class Drone:
     @staticmethod
     def msg_handler(msg):
         print('received {}'.format(msg))
-
-        if msg == 'forward' \
-                or msg == 'backward' \
-                or msg == 'left' \
-                or msg == 'right' \
-                or msg == 'stop':
-            drivetrain_queue.put(msg)
-            monitor_queue.put(msg)
-        elif msg != 'ack':
-            print('unknown command')
+        drivetrain_queue.put(msg)
+        monitor_queue.put(msg)
 
     async def close_connection(self):
         print('closing connection')
@@ -236,7 +222,7 @@ class Drone:
 if __name__ == '__main__':
     print('initializing drone')
 
-    host, speed = get_args()
+    host = get_args()
 
     # Shared memory for threads to communicate
     event = Event()
@@ -244,21 +230,15 @@ if __name__ == '__main__':
     drivetrain_queue = Queue()
     video_stream_io = np.zeros((HEIGHT, WIDTH, CHANNELS), dtype=np.uint8)
 
-    print('init monitor starting')
     display = qwiic.QwiicMicroOled()
-    print('init monitor complete')
 
-    print('init camera starting')
     camera = PiCamera()
     camera.resolution = (WIDTH, HEIGHT)
     time.sleep(2)
-    print('init camera complete')
 
-    print('init drivetrain starting')
     motorboard = qwiic.QwiicScmd()
-    print('init drivetrain complete')
 
-    drivetrain = DriveTrain(motorboard, speed)
+    drivetrain = DriveTrain(motorboard)
     monitor = Monitor(display)
     video_stream = VideoStream(camera)
     drone = Drone(host)
@@ -272,7 +252,6 @@ if __name__ == '__main__':
     loop = asyncio.get_event_loop()
 
     try:
-        print('\nstarting threads')
         if monitor_thread:
             monitor_thread.start()
 
@@ -281,9 +260,7 @@ if __name__ == '__main__':
 
         if video_stream_thread:
             video_stream_thread.start()
-        print('threads started')
 
-        print('\nstarting loop\n')
         loop.run_until_complete(drone.run())
         loop.run_forever()
 
