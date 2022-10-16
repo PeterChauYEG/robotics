@@ -88,7 +88,7 @@ class Monitor:
 
     def display_cmd(self, cmd):
         self.clear()
-        self.display.print(cmd)
+        self.display.print(cmd['action'])
 
     def task(self, queue_in):
         self.init()

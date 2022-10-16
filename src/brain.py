@@ -16,9 +16,11 @@ MODES = {
     'ROAM': 'roam',
     'APPROACH': 'approach',
 }
-CMDS = ['stop', 'forward', 'backward', 'left', 'right', 'up', 'down']
+CMDS = ['stop', 'forward', 'backward', 'left', 'right']
 MIN_RANDOM_CMD_DURATION = 0.25
 MAX_RANDOM_CMD_DURATION = 1.25
+SPEED = 75
+TURN_SPEED = 55
 
 # drone
 DEFAULT_TAKE_IMAGES = False
@@ -71,26 +73,28 @@ class Nav:
         self.last_cmd_started = datetime.now()
         self.last_cmd_duration = 0
 
-    def check_cmd_duration(self):
-        return self.last_cmd_started + timedelta(seconds=self.last_cmd_duration) >= datetime.now()
+    def get_last_cmd_complete(self) -> bool:
+        return datetime.now() >= self.last_cmd_started + timedelta(seconds=self.last_cmd_duration)
 
     @staticmethod
-    def get_random_cmd():
+    def get_random_cmd() -> str:
         return random.choice(CMDS)
 
     @staticmethod
-    def get_random_duration():
+    def get_random_duration() -> float:
         return random.uniform(MIN_RANDOM_CMD_DURATION, MAX_RANDOM_CMD_DURATION)
 
-    def task(self, cmd_queue, detected):
+    def task(self, cmd_queue, detected, drone_initiated) -> None:
         while not event.is_set():
             cmd = {
                 'action': 'stop',
                 'speed': 0
             }
 
-            if detected:
-                if self.check_cmd_duration() or self.mode == MODES['ROAM']:
+            if not drone_initiated.is_set():
+                continue
+            elif detected.is_set():
+                if self.get_last_cmd_complete() or self.mode == MODES['ROAM']:
                     cmd_queue.queue.clear()
 
                     self.last_cmd_started = datetime.now()
@@ -98,19 +102,22 @@ class Nav:
                     self.last_cmd_duration = 0.5
 
                     cmd['action'] = 'forward'
-                    cmd['speed'] = 50
-                    
+                    cmd['speed'] = SPEED
+
                     string_cmd = json.dumps(cmd)
                     cmd_queue.put(string_cmd)
 
             else:
-                if self.check_cmd_duration():
+                if self.get_last_cmd_complete():
                     self.last_cmd_started = datetime.now()
                     self.mode = MODES['ROAM']
                     self.last_cmd_duration = Nav.get_random_duration()
 
                     cmd['action'] = Nav.get_random_cmd()
-                    cmd['speed'] = 60
+                    cmd['speed'] = SPEED
+
+                    if cmd['action'] == 'left' or cmd['action'] == 'right':
+                        cmd['speed'] = TURN_SPEED
 
                     string_cmd = json.dumps(cmd)
                     cmd_queue.put(string_cmd)
@@ -122,11 +129,7 @@ class ObjectDetection:
         self.take_images = _take_images
 
     @staticmethod
-    def determine_command(object_center_y, object_center_x):
-        pass
-
-    @staticmethod
-    def find_object(predictions):
+    def find_object(predictions) -> { 'label': str, 'score': float }:
         for prediction in predictions:
             if prediction['score'] > CONFIDENCE_THRESHOLD:
                 if OBJECT in prediction['label']:
@@ -134,7 +137,7 @@ class ObjectDetection:
         return None
 
     @staticmethod
-    def save_image(img_pil, cmd, label):
+    def save_image(img_pil, cmd, label) -> None:
         dir_path = os.getcwd()
         cap_time = datetime.now().strftime("%Y%m%d_%H%M%S")
         path = dir_path + '/imgs/' + cap_time + '_' + label + '_' + cmd + '.jpg'
@@ -144,7 +147,7 @@ class ObjectDetection:
     def predict(self, img_pil):
         return self.classifier(img_pil)
 
-    def task(self, video_stream, detected):
+    def task(self, video_stream, detected) -> None:
         while not event.is_set():
             if video_stream[0][0][0] != 0:
                 img_pil = Image.fromarray(video_stream)
@@ -172,7 +175,7 @@ class ObjectDetection:
 
 class WsServer:
     @staticmethod
-    async def handler(websocket):
+    async def handler(websocket) -> None:
         print('new connection')
 
         try:
@@ -187,12 +190,12 @@ class WsServer:
         print('connection closed')
 
     @staticmethod
-    async def consumer_handler(websocket):
+    async def consumer_handler(websocket) -> None:
         async for msg in websocket:
             WsServer.handle_msg(msg)
 
     @staticmethod
-    async def producer_handler(websocket):
+    async def producer_handler(websocket) -> None:
         while not event.is_set():
             if not cmd_queue.empty():
                 cmd = cmd_queue.get()
@@ -202,8 +205,9 @@ class WsServer:
                 await asyncio.sleep(PRODUCER_DELAY)
 
     @staticmethod
-    def handle_msg(data):
+    def handle_msg(data) -> None:
         if data == 'connected':
+            drone_initiated.set()
             print('connected\n')
         else:
             print('image received')
@@ -217,6 +221,7 @@ if __name__ == '__main__':
     host, port, take_images = get_args()
 
     # Shared memory for threads to communicate
+    drone_initiated = Event()
     event = Event()
     video_stream = np.zeros((HEIGHT, WIDTH, CHANNELS), dtype=np.uint8)
     cmd_queue = Queue()
@@ -230,7 +235,7 @@ if __name__ == '__main__':
 
     # threads
     object_detection_thread = Thread(target=object_detection.task, args=(video_stream, detected))
-    nav_thread = Thread(target=nav.task, args=(cmd_queue, detected))
+    nav_thread = Thread(target=nav.task, args=(cmd_queue, detected, drone_initiated))
 
     loop = asyncio.get_event_loop()
 
