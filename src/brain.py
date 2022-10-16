@@ -17,6 +17,7 @@ MODES = {
     'APPROACH': 'approach',
 }
 CMDS = ['stop', 'forward', 'backward', 'left', 'right']
+CMDS_WEIGHTS = [20, 15, 10, 27.5, 27.5]
 MIN_RANDOM_CMD_DURATION = 0.25
 MAX_RANDOM_CMD_DURATION = 1.25
 SPEED = 75
@@ -78,7 +79,7 @@ class Nav:
 
     @staticmethod
     def get_random_cmd() -> str:
-        return random.choice(CMDS)
+        return random.choices(CMDS, weights=CMDS_WEIGHTS)[0]
 
     @staticmethod
     def get_random_duration() -> float:
